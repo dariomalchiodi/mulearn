@@ -36,7 +36,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
         :param c: Trade-off constant, defaults to 1.
         :type c: `float`
-        :param k: Kernel function, defaults to `GaussianKernel()`.
+        :param k: Kernel function, defaults to :class:`GaussianKernel()`.
         :type k: :class:`mulearn.kernel.Kernel`
         :param fuzzifier: fuzzifier mapping distance values to membership
            degrees, defaults to `ExponentialFuzzifier()`.
@@ -156,22 +156,31 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         X = check_array(X)
         return np.array([self.estimated_membership_(x) for x in X]) # noqa
 
-    def predict(self, X, alpha=0.5):
-        r"""Compute predictions for crisp membership.
+    def predict(self, X, alpha=None):
+        r"""Compute predictions for membership to the set.
 
-        Predictions are computed by performing an $\alpha$-cut on the
-        membership function.
+        Predictions are either computed through the membership function (when
+        `alpha` is set to a float in [0, 1]) or obtained via an $\alpha$-cut on
+        the same function (when `alpha` is set to `None`).
 
         :param X: Vectors in data space.
         :type X: iterable of `float` vectors having the same length
-        :param alpha: $\alpha$-cut value, defaults to 0.5.
+        :param alpha: $\alpha$-cut value, defaults to `None`.
         :type alpha: float
+        :raises: ValueError if `alpha` is set to a value different from
+          `None` and not included in $[0, 1]$.
         :returns: array of int -- the predictions for each value in `X`.
         """
         check_is_fitted(self, ['chis_', 'estimated_membership_'])
         X = check_array(X)
-        return np.array([1 if mu >= alpha else 0
-                         for mu in self.decision_function(X)])
+        mus = np.array([mu for mu in self.decision_function(X)])
+        if alpha is None:
+            return mus
+        else:
+            if alpha < 0 or alpha > 1:
+                raise ValueError("alpha cut value should belong to [0, 1]"
+                                 f" (provided {alpha})")
+            return np.array([1 if mu >= alpha else 0 for mu in mus])
 
     def score(self, X, y, **kwargs):
         r"""Compute the fuzzifier score.

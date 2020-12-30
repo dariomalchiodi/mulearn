@@ -123,8 +123,9 @@ class GurobiSolver(Solver):
           optimization, defaults to 10*60.
         :type time_limit: int
         :param adjustment: Adjustment value to be used with non-PSD matrices,
-          defaults to 0.
-        :type adjustment: float
+          defaults to 0. Specifying `'auto'` instead than a numeric value
+          will automatically trigger the optimal adjustment if needed.
+        :type adjustment: float or `'auto'`
         :param initial_values: Initial values for variables of the optimization
           problem, defaults to None.
         :type initial_values: iterable of floats or None
