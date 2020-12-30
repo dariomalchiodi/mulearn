@@ -28,7 +28,8 @@ author = 'Dario Malchiodi'
 # The full version, including alpha/beta/rc tags
 release = '0.2.8'
 
-mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path = "https://cdn.mathjax.org/mathjax/latest/"\
+               "MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 autodoc_member_order = 'bysource'
 
