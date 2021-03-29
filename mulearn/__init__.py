@@ -131,10 +131,12 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.chis_ = self.solver.solve(X, y, self.c, self.k)
 
         if type(self.k) is kernel.PrecomputedKernel:
-            self.gram_ = self.k.kernel_computations
+            idx = X.flatten()
+            self.gram_ = self.k.kernel_computations[idx][:, idx]
         else:
             self.gram_ = np.array([[self.k.compute(x1, x2) for x1 in X]
                                    for x2 in X])
+
         self.fixed_term_ = np.array(self.chis_).dot(self.gram_.dot(self.chis_))
 
         self.estimated_membership_ = self._fix_object_state(X, y)
@@ -209,7 +211,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         d = copy.deepcopy(self.__dict__)
         del d['estimated_membership_']
         del d['x_to_sq_dist_']
-        print(d)
+        #print(d)
         return d
 
     def __setstate__(self, d):
