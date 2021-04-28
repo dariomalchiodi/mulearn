@@ -6,7 +6,7 @@
 Welcome to mulearn's documentation!
 ===================================
 
-$\mu$-learn (read mooh-learn, code `mulearn`) is a python package implementing the methodology for data-driven
+$\mu$-learn (read _mooh-learn_, code `mulearn`) is a python package implementing the methodology for data-driven
 induction of fuzzy sets described in
 
 - D. Malchiodi and W. Pedrycz, Learning Membership Functions for Fuzzy Sets through Modified Support Vector Clustering,
