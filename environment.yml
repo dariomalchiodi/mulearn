@@ -1,12 +1,9 @@
 name: mulearn
 channels:
-  - plotly
-  - anaconda
-  - gurobi
   - conda-forge
-  - https://conda.anaconda.org/plotly
-  - https://conda.anaconda.org/conda-forge/
-  - http://conda.anaconda.org/gurobi
+  - plotly
+  - gurobi
+  - anaconda
   - defaults
 dependencies:
   - docutils=0.16=py37h89c1867_2
