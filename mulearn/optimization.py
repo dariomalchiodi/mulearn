@@ -238,18 +238,16 @@ class TensorFlowSolver(Solver):
     default_values = {"initial_values": "random",
                       "init_bound": 0.1,
                       "n_iter": 100,
-                      "optimizer": Adam(learning_rate=1e-4)
+                      "optimizer": Adam(learning_rate=1e-3)
                                    if tensorflow_ok else None,  # noqa
-                      "tracker": tqdm.trange if tqdm_ok else range,
-                      "penalization": 10}
+                      "tracker": tqdm.trange if tqdm_ok else range}
 
     def __init__(self,
                  initial_values=default_values["initial_values"],
                  init_bound=default_values["init_bound"],
                  n_iter=default_values["n_iter"],
                  optimizer=default_values["optimizer"],
-                 tracker=default_values["tracker"],
-                 penalization=default_values["penalization"]):
+                 tracker=default_values["tracker"]):
         """Build an object of type TensorFlowSolver.
 
         :param initial_values: values to be used for initializing the
@@ -279,10 +277,10 @@ class TensorFlowSolver(Solver):
         self.tracker = tracker
 
     def solve_lagrange_relaxation(self, Q, q, A, b, C, d,
-                  max_iter=1000,
+                  max_iter=10,
                   max_gap=10**-2,
-                  alpha_0 = 10**-1,
-                  window_width = 30,
+                  alpha_0 = 10**-3,
+                  window_width = 10,
                   verbose=False):
         """Solves the lagrangian relaxation for a constrained optimization
         problem and returns its result. The structure of the primal problem
@@ -490,73 +488,6 @@ class TensorFlowSolver(Solver):
 
         return alphas * np.array(mus) - betas * (1 - np.array(mus))
 
-
-    def solve_problem_old(self, xs, mus, c, k):
-        """Optimize via TensorFlow.
-
-        Build and solve the constrained optimization problem on the basis
-        of the fuzzy learning procedure using the TensorFlow API.
-
-        :param xs: objects in training set.
-        :type xs: iterable
-        :param mus: membership values for the objects in `xs`.
-        :type mus: iterable
-        :param c: constant managing the trade-off in joint radius/error
-          optimization.
-        :type c: float
-        :param k: kernel function to be used.
-        :type k: :class:`mulearn.kernel.Kernel`
-        :raises: ValueError if optimization fails or if TensorFlow is not
-          installed
-        :returns: list -- optimal values for the independent variables of the
-          problem.
-        """
-        if not tensorflow_ok:
-            raise ValueError('tensorflow not available')
-
-        m = len(xs)
-
-        if self.initial_values == 'random':
-            chis = [tf.Variable(ch, name=f'chi_{i}',
-                                trainable=True, dtype=tf.float32)
-                    for i, ch in enumerate(np.random.uniform(-self.init_bound,
-                                                             self.init_bound,
-                                                             m))]
-        elif isinstance(self.initial_values, Iterable):
-            chis = [tf.Variable(ch, name=f'chi_{i}',
-                                trainable=True, dtype=tf.float32)
-                    for i, ch in enumerate(self.initial_values)]
-        else:
-            raise ValueError("`initial_values` should either be set to "
-                             "'random' or to a list of initial values.")
-
-        if type(k) is kernel.PrecomputedKernel:
-            gram = k.kernel_computations
-        else:
-            gram = np.array([[k.compute(x1, x2) for x1 in xs] for x2 in xs])
-
-        def obj():
-            kernels = tf.constant(gram, dtype='float32')
-
-            v = tf.tensordot(tf.linalg.matvec(kernels, chis), chis, axes=1)
-            v -= tf.tensordot(chis,
-                              [k.compute(x_i, x_i) for x_i in xs], axes=1)
-
-            v += self.penalization * tf.math.maximum(0, 1 - sum(chis))
-            v += self.penalization * tf.math.maximum(0, sum(chis) - 1)
-
-            if c < np.inf:
-                for chi, mu in zip(chis, mus):
-                    v += self.penalization * tf.math.maximum(0, chi - c * mu)
-                    v += self.penalization *\
-                         tf.math.maximum(0, c * (1 - mu) - chi) # noqa
-
-            return v
-
-        for _ in self.tracker(self.n_iter):
-            self.optimizer.minimize(obj, var_list=chis)
-
-        return [ch.numpy() for ch in chis]
 
     def __repr__(self):
         obj_repr = f"TensorFlowSolver("

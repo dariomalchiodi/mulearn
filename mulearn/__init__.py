@@ -1,13 +1,13 @@
 
-import numpy as np
 import copy
+import numpy as np
 
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 from sklearn.exceptions import NotFittedError
 
-from mulearn.kernel import GaussianKernel
+import mulearn.kernel as kernel
 from mulearn.optimization import GurobiSolver
 from mulearn.fuzzifier import ExponentialFuzzifier
 
@@ -28,7 +28,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
     def __init__(self,
                  c=1,
-                 k=GaussianKernel(),
+                 k=kernel.GaussianKernel(),
                  fuzzifier=ExponentialFuzzifier(), # noqa
                  solver=GurobiSolver(),
                  random_state=None):
