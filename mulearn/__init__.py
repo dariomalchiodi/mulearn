@@ -65,13 +65,13 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
     def _fix_object_state(self, X, y):
         """Ensure object consistency."""
-        self.X = X
+        self.X = list(X)
         self.y = y
 
         def x_to_sq_dist(x_new):
             ret = self.k.compute(x_new, x_new) \
                   - 2 * np.array([self.k.compute(x_i, x_new)
-                                  for x_i in X]).dot(self.chis_) \
+                                  for x_i in self.X]).dot(self.chis_) \
                   + self.fixed_term_
             return ret
 
@@ -112,14 +112,13 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
           different lengths.
         :returns: self -- the trained model.
         """
-        if type(X) is not np.array:
-            X = np.array(X)
+
+        X, y = check_X_y(X, y)
 
         for e in y:
             if e < 0 or e > 1:
                 raise ValueError("`y` values should belong to [0, 1]")
-
-        check_X_y(X, y)
+            
         self.random_state = check_random_state(self.random_state)
 
         if warm_start:
