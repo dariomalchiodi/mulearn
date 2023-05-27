@@ -68,6 +68,8 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.X = list(X)
         self.y = y
 
+        self.fuzzifier = copy.deepcopy(self.fuzzifier)
+
         def x_to_sq_dist(x_new):
             ret = self.k.compute(x_new, x_new) \
                   - 2 * np.array([self.k.compute(x_i, x_new)

@@ -262,7 +262,8 @@ class LinearFuzzifier(Fuzzifier):
         R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
 
         sq_radius_1_guess = np.median([self.x_to_sq_dist(x)
-                                       for x, mu in zip(X, y) if mu >= 0.99])
+                                       for x, mu in zip(X, y)
+                                       if mu >= max(y)*0.99])
 
         if self.profile == 'fixed':
             def r_to_mu(R_arg, sq_radius_1):
@@ -372,7 +373,8 @@ class ExponentialFuzzifier(Fuzzifier):
                                  "when 'profile' is 'alpha'")
 
         r_1_guess = np.median([self.x_to_sq_dist(x)
-                               for x, mu in zip(X, y) if mu >= 0.99])
+                               for x, mu in zip(X, y) if mu >= max(y)*0.9])
+        
 
         s_guess = (self.sq_radius_05 - r_1_guess) / np.log(2)
 
@@ -403,8 +405,12 @@ class ExponentialFuzzifier(Fuzzifier):
         elif self.profile == "alpha":
             r_sample = map(self.x_to_sq_dist, X)
 
-            q = np.percentile([s - self.sq_radius_05 for s in r_sample
-                               if s > self.sq_radius_05], 100 * self.alpha)
+            inner = [s - self.sq_radius_05 for s in r_sample
+                                           if s > self.sq_radius_05]           
+
+            q = np.percentile(inner, 100 * self.alpha)
+
+            print(f'{100*self.alpha}-percentile is {q}')
 
             def r_to_mu(R_data, sq_radius_1):
                 return [np.clip(_safe_exp(np.log(self.alpha) /
