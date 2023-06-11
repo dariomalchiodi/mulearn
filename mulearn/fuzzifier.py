@@ -57,7 +57,7 @@ class Fuzzifier:
         :returns: function -- the induced membership function
         """
         r_to_mu = self._get_r_to_mu()
-        return lambda x: r_to_mu(self.x_to_sq_dist(np.array(x)))
+        return lambda x: r_to_mu(self.x_to_sq_dist(np.array(x))**0.5)
 
     def get_profile(self, X):
         r"""Return information about the learnt membership function profile.
@@ -276,6 +276,17 @@ class LinearFuzzifier(Fuzzifier):
             p_opt, _ = curve_fit(r_to_mu, R, y,
                                  p0=(sq_radius_1_guess,),
                                  bounds=((0,), (np.inf,)))
+            
+        elif self.profile == 'triangular':
+            def r_to_mu(R_arg, sq_radius_1):
+                return [np.clip(1 - r / (2 * self.sq_radius_05),
+                                0, 1) - sq_radius_1
+                        for r in R_arg]
+
+            p_opt, _ = curve_fit(r_to_mu, R, y,
+                                 p0=(sq_radius_1_guess,),
+                                 bounds=((0,), (np.inf,)))
+            print(p_opt)
 
         elif self.profile == 'infer':
 
@@ -292,8 +303,9 @@ class LinearFuzzifier(Fuzzifier):
                              "'fixed' or 'infer' (provided value: {profile})")
         if min(p_opt) < 0:
             raise ValueError('Profile fitting returned a negative parameter')
-
+        
         self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+
 
     def __repr__(self):
         """Return the python representation of the fuzzifier."""
