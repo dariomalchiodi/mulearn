@@ -47,6 +47,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         :param random_state: Seed of the pseudorandom generator.
         :type random_state: `int`
         """
+                     
         self.c = c
         self.k = k
         self.fuzzifier = fuzzifier
@@ -129,14 +130,11 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
                 raise NotFittedError("chis variable are set to None")
             self.solver.initial_values = self.chis_
 
-        self.chis_ = self.solver.solve(X, y, self.c, self.k)
+        self.chis_, self.gram_ = self.solver.solve(X, y, self.c, self.k)
 
         if type(self.k) is kernel.PrecomputedKernel:
             idx = X.flatten()
             self.gram_ = self.k.kernel_computations[idx][:, idx]
-        else:
-            self.gram_ = np.array([[self.k.compute(x1, x2) for x1 in X]
-                                   for x2 in X])
 
         self.fixed_term_ = np.array(self.chis_).dot(self.gram_.dot(self.chis_))
 
