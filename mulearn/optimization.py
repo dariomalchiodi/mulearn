@@ -88,14 +88,14 @@ class Solver:
           of the problem."""
         if c <= 0:
             raise ValueError('c should be positive')
-
+        
         mus = np.array(mus)
-        chis = self.solve_problem(xs, mus, c, k)
+        chis, kernel_comp = self.solve_problem(xs, mus, c, k)
 
         chis_opt = [np.clip(ch, l, u)
                     for ch, l, u in zip(chis, -c * (1 - mus), c * mus)] # noqa
 
-        return chis_opt
+        return chis_opt, kernel_comp
 
 
 class GurobiSolver(Solver):
@@ -135,92 +135,95 @@ class GurobiSolver(Solver):
         self.initial_values = initial_values
 
     def solve_problem(self, xs, mus, c, k):
-        """Optimize via gurobi.
+            """Optimize via gurobi.
+    
+            Build and solve the constrained optimization problem at the basis
+            of the fuzzy learning procedure using the gurobi API.
+    
+            :param xs: objects in training set.
+            :type xs: iterable
+            :param mus: membership values for the objects in `xs`.
+            :type mus: iterable
+            :param c: constant managing the trade-off in joint radius/error
+              optimization.
+            :type c: float
+            :param k: kernel function to be used.
+            :type k: :class:`mulearn.kernel.Kernel`
+            :raises: ValueError if optimization fails or if gurobi is not installed
+            :returns: list -- optimal values for the independent variables of the
+              problem.
+            """
+    
+        
+            if not gurobi_ok:
+                raise ValueError('gurobi not available')
+    
+            m = len(xs)
+    
+            with Env(empty=True) as env:
+                env.setParam('OutputFlag', 0)
+                env.start()
+                with Model('mulearn', env=env) as model:
+                    model.setParam('OutputFlag', 0)
+                    model.setParam('TimeLimit', self.time_limit)
 
-        Build and solve the constrained optimization problem at the basis
-        of the fuzzy learning procedure using the gurobi API.
-
-        :param xs: objects in training set.
-        :type xs: iterable
-        :param mus: membership values for the objects in `xs`.
-        :type mus: iterable
-        :param c: constant managing the trade-off in joint radius/error
-          optimization.
-        :type c: float
-        :param k: kernel function to be used.
-        :type k: :class:`mulearn.kernel.Kernel`
-        :raises: ValueError if optimization fails or if gurobi is not installed
-        :returns: list -- optimal values for the independent variables of the
-          problem.
-        """
-        if not gurobi_ok:
-            raise ValueError('gurobi not available')
-
-        m = len(xs)
-
-        with Env(empty=True) as env:
-            env.setParam('OutputFlag', 0)
-            env.start()
-            with Model('mulearn', env=env) as model:
-                model.setParam('OutputFlag', 0)
-                model.setParam('TimeLimit', self.time_limit)
-
-                for i in range(m):
                     if c < np.inf:
-                        model.addVar(name=f'chi_{i}',
-                                     lb=-c * (1 - mus[i]), ub=c * mus[i],
+                        model.addVars(m,
+                                     name=[f'chi_{i}' for i in range(m)],
+                                     lb=-c * (1 - mus), ub=c * mus,
                                      vtype=GRB.CONTINUOUS)
                     else:
-                        model.addVar(name=f'chi_{i}', vtype=GRB.CONTINUOUS)
+                        model.addVars(name=[f'chi_{i}' for i in range(m)], vtype=GRB.CONTINUOUS)
+    
+                    model.update()
+                    chis = model.getVars()
 
-                model.update()
-                chis = model.getVars()
+    
+                    if self.initial_values is not None:
+                        for c, i in zip(chis, self.initial_values):
+                            c.start = i
 
-                if self.initial_values is not None:
-                    for c, i in zip(chis, self.initial_values):
-                        c.start = i
+                    kernel_comp = np.array([[k.compute(x1, x2) for x1 in xs] for x2 in xs])
+                
+                    obj = QuadExpr()
 
-                obj = QuadExpr()
+                    obj.add(np.array(chis).dot(kernel_comp.dot(chis)))
 
-                for i, j in it.product(range(m), range(m)):
-                    obj.add(chis[i] * chis[j], k.compute(xs[i], xs[j]))
-
-                for i in range(m):
-                    obj.add(-1 * chis[i] * k.compute(xs[i], xs[i]))
-
-                if self.adjustment and self.adjustment != 'auto':
-                    for i in range(m):
-                        obj.add(self.adjustment * chis[i] * chis[i])
-
-                model.setObjective(obj, GRB.MINIMIZE)
-
-                constEqual = LinExpr()
-                constEqual.add(sum(chis), 1.0)
-
-                model.addConstr(constEqual, GRB.EQUAL, 1)
-
-                try:
-                    model.optimize()
-                except GurobiError as e:
-                    print(e.message)
-                    if self.adjustment == 'auto':
-                        s = e.message
-                        a = float(s[s.find(' of ') + 4:s.find(' would')])
-                        logger.warning('non-diagonal Gram matrix, '
-                                       f'retrying with adjustment {a}')
-                        for i in range(m):
-                            obj.add(a * chis[i] * chis[i])
-                        model.setObjective(obj, GRB.MINIMIZE)
-
+                    obj.add(np.array(chis).dot(-1*np.diag(kernel_comp)))
+    
+                    if self.adjustment and self.adjustment != 'auto':
+                        obj.add(self.adjustment * np.array(chis).dot(chis))
+    
+                    model.setObjective(obj, GRB.MINIMIZE)
+    
+                    constEqual = LinExpr()
+                    constEqual.add(sum(chis), 1.0)
+    
+                    model.addConstr(constEqual, GRB.EQUAL, 1)
+    
+                    try:
                         model.optimize()
-                    else:
-                        raise e
+                    except GurobiError as e:
+                        print(e.message)
+                        if self.adjustment == 'auto':
+                            s = e.message
+                            a = float(s[s.find(' of ') + 4:s.find(' would')])
+                            logger.warning('non-diagonal Gram matrix, '
+                                           f'retrying with adjustment {a}')
 
-                if model.Status != GRB.OPTIMAL:
-                    raise ValueError('optimal solution not found!')
+                            obj.add(a * np.array(chis).dot(chis))
+                            model.setObjective(obj, GRB.MINIMIZE)
+    
+                            model.optimize()
+                        else:
+                            raise e
+    
+                    if model.Status != GRB.OPTIMAL:
+                        raise ValueError('optimal solution not found!')
+    
+                    return [ch.x for ch in chis], kernel_comp
 
-                return [ch.x for ch in chis]
-
+    
     def __repr__(self):
         obj_repr = f"GurobiSolver("
 
@@ -228,6 +231,8 @@ class GurobiSolver(Solver):
             if self.__getattribute__(a) != self.default_values[a]:
                 obj_repr += f", {a}={self.default_values[a]}"
         return obj_repr + ")"
+
+
 
 
 class TensorFlowSolver(Solver):
