@@ -130,11 +130,13 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
                 raise NotFittedError("chis variable are set to None")
             self.solver.initial_values = self.chis_
 
-        self.chis_, self.gram_ = self.solver.solve(X, y, self.c, self.k)
-
         if type(self.k) is kernel.PrecomputedKernel:
             idx = X.flatten()
             self.gram_ = self.k.kernel_computations[idx][:, idx]
+        else:
+            self.gram_ = np.array([[self.k.compute(x1, x2) for x1 in X] for x2 in X])
+        
+        self.chis_ = self.solver.solve(X, y, self.c, self.gram_)
 
         self.fixed_term_ = np.array(self.chis_).dot(self.gram_.dot(self.chis_))
 
