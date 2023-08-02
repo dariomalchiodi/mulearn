@@ -90,12 +90,12 @@ class Solver:
             raise ValueError('c should be positive')
         
         mus = np.array(mus)
-        chis, kernel_comp = self.solve_problem(xs, mus, c, k)
+        chis = self.solve_problem(xs, mus, c, k)
 
         chis_opt = [np.clip(ch, l, u)
                     for ch, l, u in zip(chis, -c * (1 - mus), c * mus)] # noqa
 
-        return chis_opt, kernel_comp
+        return chis_opt
 
 
 class GurobiSolver(Solver):
@@ -134,6 +134,7 @@ class GurobiSolver(Solver):
         self.adjustment = adjustment
         self.initial_values = initial_values
 
+
     def solve_problem(self, xs, mus, c, k):
             """Optimize via gurobi.
     
@@ -147,14 +148,13 @@ class GurobiSolver(Solver):
             :param c: constant managing the trade-off in joint radius/error
               optimization.
             :type c: float
-            :param k: kernel function to be used.
-            :type k: :class:`mulearn.kernel.Kernel`
+            :param k: kernel computations to be used.
+            :type k: iterable
             :raises: ValueError if optimization fails or if gurobi is not installed
             :returns: list -- optimal values for the independent variables of the
               problem.
             """
-    
-        
+
             if not gurobi_ok:
                 raise ValueError('gurobi not available')
     
@@ -166,6 +166,7 @@ class GurobiSolver(Solver):
                 with Model('mulearn', env=env) as model:
                     model.setParam('OutputFlag', 0)
                     model.setParam('TimeLimit', self.time_limit)
+                    #model.setParam('NonConvex', 2)
 
                     if c < np.inf:
                         model.addVars(m,
@@ -176,23 +177,20 @@ class GurobiSolver(Solver):
                         model.addVars(name=[f'chi_{i}' for i in range(m)], vtype=GRB.CONTINUOUS)
     
                     model.update()
-                    chis = model.getVars()
+                    chis = np.array(model.getVars())
 
-    
                     if self.initial_values is not None:
                         for c, i in zip(chis, self.initial_values):
                             c.start = i
-
-                    kernel_comp = np.array([[k.compute(x1, x2) for x1 in xs] for x2 in xs])
                 
                     obj = QuadExpr()
 
-                    obj.add(np.array(chis).dot(kernel_comp.dot(chis)))
+                    obj.add(chis.dot(k.dot(chis)))
 
-                    obj.add(np.array(chis).dot(-1*np.diag(kernel_comp)))
+                    obj.add(chis.dot(-1*np.diag(k)))
     
                     if self.adjustment and self.adjustment != 'auto':
-                        obj.add(self.adjustment * np.array(chis).dot(chis))
+                        obj.add(self.adjustment * chis.dot(chis))
     
                     model.setObjective(obj, GRB.MINIMIZE)
     
@@ -211,7 +209,7 @@ class GurobiSolver(Solver):
                             logger.warning('non-diagonal Gram matrix, '
                                            f'retrying with adjustment {a}')
 
-                            obj.add(a * np.array(chis).dot(chis))
+                            obj.add(a * chis.dot(chis))
                             model.setObjective(obj, GRB.MINIMIZE)
     
                             model.optimize()
@@ -219,9 +217,23 @@ class GurobiSolver(Solver):
                             raise e
     
                     if model.Status != GRB.OPTIMAL:
+
+                        if model.Status == GRB.INFEASIBLE:
+                            raise ValueError('model was proven to be infeasible!')
+
+                        if model.Status == GRB.INF_OR_UNBD:
+                            raise ValueError('model was proven to be either infeasible or unbounded!')
+                            
+                        if model.Status == GRB.UNBOUNDED:
+                            raise ValueError('model was proven to be unbounded!')
+                            
+                        if model.Status == GRB.SUBOPTIMAL:
+                            raise ValueError('optimization terminated with a sub-optimal solution!')
+
                         raise ValueError('optimal solution not found!')
+                            
     
-                    return [ch.x for ch in chis], kernel_comp
+                    return [ch.x for ch in chis]
 
     
     def __repr__(self):
@@ -447,22 +459,17 @@ class TensorFlowSolver(Solver):
             raise ValueError("`initial_values` should either be set to "
                              "'random' or to a list of initial values.")
         
-        if type(k) is kernel.PrecomputedKernel:
-            gram = k.kernel_computations
-        else:
-            gram = np.array([[k.compute(x1, x2) for x2 in xs] for x1 in xs])
-        
         x = alphas + betas
 
-        K11 = np.array([[-mu_i * mu_j for mu_j in mus] for mu_i in mus]) * gram
+        K11 = np.array([[-mu_i * mu_j for mu_j in mus] for mu_i in mus]) * k
         K00 = np.array([[-(1-mu_i) * (1 - mu_j) for mu_j in mus]
-                         for mu_i in mus]) * gram
+                         for mu_i in mus]) * k
         K01 = np.array([[2 * mu_i * (1-mu_j) for mu_j in mus]
-                         for mu_i in mus]) * gram
+                         for mu_i in mus]) * k
         Z = np.zeros((m, m))
 
         Q = -np.vstack((np.hstack((K11, K01)), np.hstack((Z, K00))))
-        q = -np.hstack((np.diag(gram) * mus, np.diag(gram) * (1 - mus)))
+        q = -np.hstack((np.diag(k) * mus, np.diag(k) * (1 - mus)))
 
         A = np.array([np.hstack((mus, 1-mus))])
         b = np.array([1])
