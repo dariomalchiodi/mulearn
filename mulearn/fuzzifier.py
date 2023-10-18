@@ -57,7 +57,7 @@ class Fuzzifier:
         :returns: function -- the induced membership function
         """
         r_to_mu = self._get_r_to_mu()
-        return lambda x: r_to_mu(self.x_to_sq_dist(np.array(x))**0.5)
+        return lambda X: r_to_mu(self.x_to_sq_dist(X)**0.5)
 
     def get_profile(self, X):
         r"""Return information about the learnt membership function profile.
@@ -90,9 +90,10 @@ class Fuzzifier:
         :returns: list -- $[r_{\mathrm{data}}, \tilde{r}_\mathrm{data}, e]$.
 
         """
-        rdata = list(map(self.x_to_sq_dist, X))
+        rdata = list(self.x_to_sq_dist(X)**0.5)
+        #print(self.x_to_sq_dist(X))
         rdata_synth = np.linspace(0, max(rdata) * 1.1, 200)
-        estimate = list(map(self._get_r_to_mu(), rdata_synth))
+        estimate = list(self._get_r_to_mu()(rdata_synth))
         return [rdata, rdata_synth, estimate]
 
     def __str__(self):
@@ -179,23 +180,23 @@ class CrispFuzzifier(Fuzzifier):
         check_X_y(X, y)
 
         if self.profile == "fixed":
-            self.r_to_mu = lambda r: 1 if r <= self.sq_radius_05 else 0
+            self.r_to_mu = lambda R: [1 if r <= self.sq_radius_05**0.5 else 0 for r in R]
 
         elif self.profile == "infer":
-            R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
+            R = self.x_to_sq_dist(X)**0.5
 
             def r_to_mu(r, sq_radius_05):
                 result = np.ones(len(r))
                 result[r > sq_radius_05] = 0
                 return result
 
-            p_opt, _ = curve_fit(r_to_mu, R, y,
+            p_opt, _ = curve_fit(r_to_mu, R, y, 
                                  bounds=((0,), (np.inf,)))
-
+            
             if p_opt[0] < 0:
                 raise ValueError("Profile fit returned a negative parameter")
 
-            self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
         else:
             raise ValueError("'profile' parameter should either be equal to "
                              f"'fixed' or 'infer' (provided: {self.profile})")
@@ -259,34 +260,40 @@ class LinearFuzzifier(Fuzzifier):
         """
         check_array(X)
         check_X_y(X, y)
-        R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
+        R = self.x_to_sq_dist(X)**0.5
 
-        sq_radius_1_guess = np.median([self.x_to_sq_dist(x)
-                                       for x, mu in zip(X, y)
-                                       if mu >= max(y)*0.99])
+        
+        sq_radius_1_guess = np.median(self.x_to_sq_dist(
+                                      [x for x, mu in zip(X, y) 
+                                      if mu >= max(y)*0.99])**0.5)
+        
+        sq_radius_0_guess = np.median(self.x_to_sq_dist(
+                                      [x for x, mu in zip(X, y) 
+                                      if mu <= min(y)*1.01])**0.5)
 
+                                      
         if self.profile == 'fixed':
             def r_to_mu(R_arg, sq_radius_1):
                 return [np.clip(1 - 0.5 *
                                 (r - sq_radius_1) /
-                                (self.sq_radius_05 - sq_radius_1),
+                                (self.sq_radius_05**0.5 - sq_radius_1),
                                 0, 1)
                         for r in R_arg]
 
             p_opt, _ = curve_fit(r_to_mu, R, y,
                                  p0=(sq_radius_1_guess,),
                                  bounds=((0,), (np.inf,)))
+        
             
         elif self.profile == 'triangular':
             def r_to_mu(R_arg, sq_radius_1):
-                return [np.clip(1 - r / (2 * self.sq_radius_05),
-                                0, 1) - sq_radius_1
+                return [np.clip(1 - r / (2 * self.sq_radius_05**0.5),
+                                0, 1) - sq_radius_1  #-------------
                         for r in R_arg]
 
             p_opt, _ = curve_fit(r_to_mu, R, y,
                                  p0=(sq_radius_1_guess,),
                                  bounds=((0,), (np.inf,)))
-            print(p_opt)
 
         elif self.profile == 'infer':
 
@@ -296,15 +303,15 @@ class LinearFuzzifier(Fuzzifier):
                         for r in R_arg]
 
             p_opt, _ = curve_fit(r_to_mu, R, y,
-                                 p0=(sq_radius_1_guess, 10 * self.sq_radius_05),
-                                 bounds=((0, 0), (np.inf, np.inf,)))
+                                 p0=(sq_radius_1_guess, sq_radius_0_guess), 
+                                 bounds=((-np.inf, -np.inf), (np.inf, np.inf,)))
         else:
             raise ValueError("'profile' parameter should be equal to "
                              "'fixed' or 'infer' (provided value: {profile})")
         if min(p_opt) < 0:
             raise ValueError('Profile fitting returned a negative parameter')
         
-        self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+        self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
 
 
     def __repr__(self):
@@ -384,24 +391,27 @@ class ExponentialFuzzifier(Fuzzifier):
                 raise ValueError("alpha must be set to a float between 0 and 1 "
                                  "when 'profile' is 'alpha'")
 
-        r_1_guess = np.median([self.x_to_sq_dist(x)
-                               for x, mu in zip(X, y) if mu >= max(y)*0.9])
         
 
-        s_guess = (self.sq_radius_05 - r_1_guess) / np.log(2)
+        r_1_guess = np.median(self.x_to_sq_dist(
+                              [x for x, mu in zip(X, y) 
+                              if mu >= max(y)*0.9])**0.5)
+        
 
-        R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
+        s_guess = (self.sq_radius_05**0.5 - r_1_guess) / np.log(2)
+
+        R = self.x_to_sq_dist(X)**0.5
 
         if self.profile == "fixed":
             def r_to_mu(R_data, sq_radius_1):
                 return [np.clip(_safe_exp(-(r - sq_radius_1) /
-                                          (self.sq_radius_05 - sq_radius_1)
+                                          (self.sq_radius_05**0.5 - sq_radius_1)
                                           * np.log(2)), 0, 1) for r in R_data]
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 p_opt, _ = curve_fit(r_to_mu, R, y, p0=(r_1_guess,),
                                      maxfev=2000, bounds=((0,), (np.inf,)))
-            self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
 
         elif self.profile == "infer":
             def r_to_mu(R_data, r_1, s):
@@ -412,13 +422,13 @@ class ExponentialFuzzifier(Fuzzifier):
                                  # bounds=((0, 0), (np.inf, np.inf)),
                                  maxfev=2000)
 
-            self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
 
         elif self.profile == "alpha":
-            r_sample = map(self.x_to_sq_dist, X)
+            r_sample = self.x_to_sq_dist(X)**0.5
 
-            inner = [s - self.sq_radius_05 for s in r_sample
-                                           if s > self.sq_radius_05]           
+            inner = [s - self.sq_radius_05**0.5 for s in r_sample
+                                           if s > self.sq_radius_05**0.5]           
 
             q = np.percentile(inner, 100 * self.alpha)
 
@@ -431,7 +441,7 @@ class ExponentialFuzzifier(Fuzzifier):
 
             p_opt, _ = curve_fit(r_to_mu, R, y, p0=(r_1_guess,),
                                  bounds=((0,), (np.inf,)))
-            self.r_to_mu = lambda r: r_to_mu([r], *p_opt)[0]
+            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
         else:
             raise ValueError("'profile' parameter should be equal to "
                              "'infer', 'fixed' or 'alpha' "
@@ -479,13 +489,17 @@ class QuantileConstantPiecewiseFuzzifier(Fuzzifier):
         check_array(X)
         check_X_y(X, y)
 
-        R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
+        R = self.x_to_sq_dist(X)**0.5
 
-        sq_radius_1 = np.median([self.x_to_sq_dist(x)
-                                 for x, mu in zip(X, y) if mu >= 0.99])
+        sq_radius_1 = np.median(self.x_to_sq_dist(
+                                [x for x, mu in zip(X, y) 
+                                if mu >= max(y)*0.99])**0.5)
+        
+        
         external_dist = [r - sq_radius_1
                          for r in R if r > sq_radius_1]
 
+              
         if external_dist:
             m = np.median(external_dist)
             q1 = np.percentile(external_dist, 25)
@@ -493,12 +507,12 @@ class QuantileConstantPiecewiseFuzzifier(Fuzzifier):
         else:
             m = q1 = q3 = 0
 
-        def r_to_mu(r):
-            return 1 if r <= sq_radius_1 \
+        def r_to_mu(R):
+            return [1 if r <= sq_radius_1 \
                 else 0.75 if r <= sq_radius_1 + q1 \
                 else 0.5 if r <= sq_radius_1 + m \
                 else 0.25 if r <= sq_radius_1 + q3 \
-                else 0
+                else 0 for r in R]
 
         self.r_to_mu = r_to_mu
 
@@ -536,10 +550,12 @@ class QuantileLinearPiecewiseFuzzifier(Fuzzifier):
         check_array(X)
         check_X_y(X, y)
 
-        R = np.fromiter(map(self.x_to_sq_dist, X), dtype=float)
-
-        sq_radius_1 = np.median([self.x_to_sq_dist(x)
-                                 for x, mu in zip(X, y) if mu >= 0.99])
+        R = self.x_to_sq_dist(X)**0.5
+        
+        sq_radius_1 = np.median(self.x_to_sq_dist(
+                                [x for x, mu in zip(X, y) 
+                                if mu >= max(y)*0.99])**0.5)
+        
         external_dist = [r - sq_radius_1
                          for r in R if r > sq_radius_1]
 
@@ -551,14 +567,14 @@ class QuantileLinearPiecewiseFuzzifier(Fuzzifier):
         else:
             m = q1 = q3 = mx = 0
 
-        def r_to_mu(r):
+        def r_to_mu(R):
             ssd = sq_radius_1
-            return 1 if r <= ssd \
+            return [1 if r <= ssd \
                 else (-r + ssd) / (4 * q1) + 1 if r <= ssd + q1 \
                 else (-r + ssd + q1) / (4 * (m - q1)) + 3 / 4 if r <= ssd + m \
                 else (-r + ssd + m) / (4 * (q3 - m)) + 1 / 2 if r <= ssd + q3 \
                 else (-r + ssd + q3) / (4 * (mx - q3)) + 1 / 4 if r <= ssd + mx\
-                else 0
+                else 0 for r in R]
 
         self.r_to_mu = r_to_mu
 
