@@ -66,16 +66,22 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
     def _fix_object_state(self, X, y):
         """Ensure object consistency."""
-        self.X = list(X)
+        self.X = X
         self.y = y
 
         self.fuzzifier = copy.deepcopy(self.fuzzifier)
 
-        def x_to_sq_dist(x_new):
-            ret = self.k.compute(x_new, x_new) \
-                  - 2 * np.array([self.k.compute(x_i, x_new)
-                                  for x_i in self.X]).dot(self.chis_) \
-                  + self.fixed_term_
+        def x_to_sq_dist(X_new):
+            
+            X_new = np.array(X_new).reshape(-1,1)
+
+            t1 = self.k.compute(X_new, X_new)
+
+            t2 = np.array([self.k.compute(x_i, X_new)
+                            for x_i in self.X]).transpose().dot(self.chis_)
+            
+            ret = t1 -2*t2 + self.fixed_term_
+            
             return ret
 
         self.fuzzifier.x_to_sq_dist = x_to_sq_dist
@@ -83,8 +89,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         chi_SV_index = [i for i, (chi, mu) in enumerate(zip(self.chis_, y))
                         if -self.c * (1 - mu) < chi < self.c * mu]
 
-        chi_sq_radius = map(x_to_sq_dist, X[chi_SV_index])
-        chi_sq_radius = list(chi_sq_radius)
+        chi_sq_radius = list(x_to_sq_dist(X[chi_SV_index]))
 
         if len(chi_sq_radius) == 0:
             self.estimated_membership_ = None
@@ -134,7 +139,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
             idx = X.flatten()
             self.gram_ = self.k.kernel_computations[idx][:, idx]
         else:
-            self.gram_ = np.array([[self.k.compute(x1, x2) for x1 in X] for x2 in X])
+            self.gram_ = np.array([self.k.compute(x1, X) for x1 in X])
         
         self.chis_ = self.solver.solve(X, y, self.c, self.gram_)
 
@@ -157,7 +162,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, ['chis_', 'estimated_membership_'])
         X = check_array(X)
-        return np.array([self.estimated_membership_(x) for x in X]) # noqa
+        return self.estimated_membership_(X) # noqa
 
     def predict(self, X, alpha=None):
         r"""Compute predictions for membership to the set.
@@ -176,7 +181,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, ['chis_', 'estimated_membership_'])
         X = check_array(X)
-        mus = np.array([mu for mu in self.decision_function(X)])
+        mus = self.decision_function(X)
         if alpha is None:
             return mus
         else:
