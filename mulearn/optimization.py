@@ -529,6 +529,8 @@ class TensorFlowSolver(Solver):
         return obj_repr + ")"
 
 
+#Cooper solver, need to fix compatibility issues
+"""
 class CooperSolver(Solver):
 
     """Solver based on PyTorch.
@@ -723,6 +725,8 @@ class CooperSolver(Solver):
     @staticmethod
     def almost_negative(tensor, atol):
         return torch.isclose(tensor[torch.gt(tensor,0.0)], torch.tensor(0.0, dtype=torch.float64), atol=atol).all()
+
+"""
 
 
 
