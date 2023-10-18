@@ -74,7 +74,7 @@ class LinearKernel(Kernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        return float(np.dot(arg_1, arg_2))
+        return np.sum(arg_1 * arg_2, axis=1)
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -112,7 +112,7 @@ class PolynomialKernel(Kernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        return float((np.dot(arg_1, arg_2) + 1) ** self.degree)
+        return (np.sum(arg_1 * arg_2, axis=1) + 1) ** self.degree
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -145,7 +145,7 @@ class HomogeneousPolynomialKernel(PolynomialKernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        return float(np.dot(arg_1, arg_2) ** self.degree)
+        return np.sum(arg_1 * arg_2, axis=1) ** self.degree
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -154,7 +154,7 @@ class HomogeneousPolynomialKernel(PolynomialKernel):
 
 class GaussianKernel(Kernel):
     """Gaussian kernel class."""
-
+    
     default_sigma = 1
 
     def __init__(self, sigma=default_sigma):
@@ -171,6 +171,7 @@ class GaussianKernel(Kernel):
             raise ValueError(f'{sigma} is not usable '
                              'as a gaussian standard deviation')
 
+
     def compute(self, arg_1, arg_2):
         r"""Compute the kernel value.
 
@@ -184,8 +185,8 @@ class GaussianKernel(Kernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        diff = np.linalg.norm(np.array(arg_1) - np.array(arg_2)) ** 2
-        return float(np.exp(-1. * diff / (2 * self.sigma ** 2)))
+        diff = np.linalg.norm(arg_1 - arg_2, axis=1) ** 2
+        return np.exp(-1. * diff / (2 * self.sigma ** 2))
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -227,8 +228,8 @@ class HyperbolicKernel(Kernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        dot_orig = np.dot(np.array(arg_1), np.array(arg_2))
-        return float(np.tanh(self.scale * dot_orig + self.offset))
+        dot_orig = np.sum(arg_1 * arg_2, axis=1)
+        return np.tanh(self.scale * dot_orig + self.offset)
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -267,7 +268,7 @@ class PrecomputedKernel(Kernel):
 
         self.kernel_computations = kernel_computations
 
-    def compute(self, arg_1, arg_2):
+    def compute(self, arg_1):
         r"""Compute the kernel value.
 
         The value of a precomputed kernel is retrieved according to the indices
@@ -280,7 +281,7 @@ class PrecomputedKernel(Kernel):
         :type arg_2: iterable of `float`
         :returns: `float` -- kernel value.
         """
-        return float(self.kernel_computations[arg_1[0]][arg_2[0]])
+        return self.kernel_computations[arg_1[0]]
 
     def __repr__(self):
         """Return the python representation of the kernel."""
