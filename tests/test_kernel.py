@@ -1,17 +1,24 @@
 from unittest import TestCase
 
-from mulearn.kernel import *
+from kernel import *
 
 
 class TestLinearKernel(TestCase):
     def test_compute(self):
         k = LinearKernel()
-        self.assertEqual(k.compute([1, 0, 1], [2, 2, 2]), 4)
-        self.assertEqual(k.compute((1, 0, 2), (-1, 2, 5)), 9)
-        self.assertAlmostEqual(k.compute([1.2, -0.4, -2], [4, 1.2, .5]), 3.32)
-        self.assertAlmostEqual(k.compute((1.2, -0.4, -2), [4, 1.2, .5]), 3.32)
+        self.assertEqual(k.compute(np.array([1, 0, 1]).reshape(1,-1), 
+                                   np.array([2, 2, 2]).reshape(1,-1)), 4)
+        self.assertEqual(k.compute(np.array((1, 0, 2)).reshape(1,-1), 
+                                   np.array((-1, 2, 5)).reshape(1,-1)), 9)
+                         
+        self.assertAlmostEqual(k.compute(np.array([1.2, -0.4, -2]).reshape(1,-1), 
+                                         np.array([4, 1.2, .5]).reshape(1,-1)), 3.32)
+        self.assertAlmostEqual(k.compute(np.array((1.2, -0.4, -2)).reshape(1,-1), 
+                                         np.array([4, 1.2, .5]).reshape(1,-1)), 3.32)
+
         with self.assertRaises(ValueError):
-            k.compute([1, 0, 1], [2, 2])
+            k.compute(np.array([1, 0, 1]).reshape(1,-1), 
+                      np.array([2, 2]).reshape(1,-1))
 
 
 class TestPolynomialKernel(TestCase):
@@ -23,19 +30,27 @@ class TestPolynomialKernel(TestCase):
             PolynomialKernel(-2)
 
         p = PolynomialKernel(2)
-        self.assertEqual(p.compute((1, 0, 2), (-1, 2, 5)), 100)
-        self.assertAlmostEqual(p.compute([1.2, -0.4, -2], [4, 1.2, .5]),
+        self.assertEqual(p.compute(np.array((1, 0, 2)).reshape(1,-1), 
+                                   np.array((-1, 2, 5)).reshape(1,-1)), 100)
+        self.assertAlmostEqual(p.compute(np.array([1.2, -0.4, -2]).reshape(1,-1), 
+                                         np.array([4, 1.2, .5]).reshape(1,-1)),
                                18.6624)
 
         p = PolynomialKernel(5)
-        self.assertEqual(p.compute((1, 0, 2), [-1, 2, 5]), 10 ** 5)
-        self.assertAlmostEqual(p.compute((1.2, -0.4, -2), (4, 1.2, .5)),
+        self.assertEqual(p.compute(np.array((1, 0, 2)).reshape(1,-1), 
+                                   np.array([-1, 2, 5]).reshape(1,-1)), 10 ** 5)
+        self.assertAlmostEqual(p.compute(np.array((1.2, -0.4, -2)).reshape(1,-1), 
+                                         np.array((4, 1.2, .5)).reshape(1,-1)),
                                1504.59195, delta=10**-6)
 
         with self.assertRaises(ValueError):
-            p.compute((1, 0, 2), (-1, 2))
+            p.compute(np.array((1, 0, 2)).reshape(1,-1), 
+                      np.array((-1, 2)).reshape(1,-1))
 
 
+
+
+#TODO: FIXARE I TEST DA QUI IN POI PER IL NUOVO KERNEL.COMPUTE()
 class TestHomogeneousPolynomialKernel(TestCase):
     def test_compute(self):
         with self.assertRaises(ValueError):
@@ -92,11 +107,11 @@ class TestPrecomputedKernel(TestCase):
             PrecomputedKernel(((1, 2), (3, 4, 5)))
 
         k = PrecomputedKernel(((1, 2), (3, 4)))
-        self.assertEqual(k.compute([1], [1]), 4.0)
-        self.assertEqual(k.compute([1], [0]), 3.0)
+        self.assertEqual(k.compute([1])[1], 4.0)
+        self.assertEqual(k.compute([1])[0], 3.0)
 
         with self.assertRaises(IndexError):
-            k.compute([1], [2])
+            k.compute([2])
 
         with self.assertRaises(TypeError):
             k.compute([0], [1.6])
