@@ -179,6 +179,7 @@ class CrispFuzzifier(Fuzzifier):
         check_array(X)
         check_X_y(X, y)
 
+            
         if self.profile == "fixed":
             self.r_to_mu = lambda R: [1 if r <= self.sq_radius_05**0.5 else 0 for r in R]
 
@@ -197,6 +198,7 @@ class CrispFuzzifier(Fuzzifier):
                 raise ValueError("Profile fit returned a negative parameter")
 
             self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
+            
         else:
             raise ValueError("'profile' parameter should either be equal to "
                              f"'fixed' or 'infer' (provided: {self.profile})")
@@ -258,6 +260,7 @@ class LinearFuzzifier(Fuzzifier):
         to the learnt square radius of the sphere, and induced via
         interpolation of `X` and `y` when it is has been set to `'infer'`.
         """
+        
         check_array(X)
         check_X_y(X, y)
         R = self.x_to_sq_dist(X)**0.5
@@ -302,6 +305,7 @@ class LinearFuzzifier(Fuzzifier):
                                 (sq_radius_1 - sq_radius_0), 0, 1)
                         for r in R_arg]
 
+
             p_opt, _ = curve_fit(r_to_mu, R, y,
                                  p0=(sq_radius_1_guess, sq_radius_0_guess), 
                                  bounds=((-np.inf, -np.inf), (np.inf, np.inf,)))
@@ -311,6 +315,7 @@ class LinearFuzzifier(Fuzzifier):
         if min(p_opt) < 0:
             raise ValueError('Profile fitting returned a negative parameter')
         
+
         self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
 
 
@@ -382,6 +387,7 @@ class ExponentialFuzzifier(Fuzzifier):
         check_array(X)
         check_X_y(X, y)
 
+
         if self.alpha > 0 and self.profile != "alpha":
             raise ValueError(f"'alpha' value is specified, but 'profile' "
                              f"is set to '{self.profile}'")
@@ -411,7 +417,7 @@ class ExponentialFuzzifier(Fuzzifier):
                 warnings.simplefilter("ignore")
                 p_opt, _ = curve_fit(r_to_mu, R, y, p0=(r_1_guess,),
                                      maxfev=2000, bounds=((0,), (np.inf,)))
-            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
+            
 
         elif self.profile == "infer":
             def r_to_mu(R_data, r_1, s):
@@ -422,7 +428,6 @@ class ExponentialFuzzifier(Fuzzifier):
                                  # bounds=((0, 0), (np.inf, np.inf)),
                                  maxfev=2000)
 
-            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
 
         elif self.profile == "alpha":
             r_sample = self.x_to_sq_dist(X)**0.5
@@ -441,22 +446,27 @@ class ExponentialFuzzifier(Fuzzifier):
 
             p_opt, _ = curve_fit(r_to_mu, R, y, p0=(r_1_guess,),
                                  bounds=((0,), (np.inf,)))
-            self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
+            
+            
         else:
             raise ValueError("'profile' parameter should be equal to "
                              "'infer', 'fixed' or 'alpha' "
                              f"(provided value: {self.profile})")
 
+
+        
+        self.r_to_mu = lambda R: r_to_mu(R, *p_opt)
+
     def __repr__(self):
         obj_repr = "ExponentialFuzzifier("
         if self.profile != self.default_profile:
-            obj_repr += f", profile={self.profile}"
+            obj_repr += f"profile={self.profile}"
+
         if self.alpha != self.default_alpha:
             obj_repr += f", alpha={self.alpha}"
-        if obj_repr.endswith(", "):
-            return obj_repr + ")"
-        else:
-            return "ExponentialFuzzifier()"
+
+        return obj_repr + ")"
+
 
 
 class QuantileConstantPiecewiseFuzzifier(Fuzzifier):

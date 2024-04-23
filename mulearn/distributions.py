@@ -35,6 +35,7 @@ class GaussianKernelDistribution(rv_continuous):
                              f"equal to the lower one {low}.")
         self.base_dist = uniform(loc=low, scale=high-low)
 
+
     def rvs(self, *args, **kwargs):
         """Generate a Gaussian kernel with uniformly distributed parameter.
 

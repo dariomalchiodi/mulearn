@@ -73,15 +73,11 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
         def x_to_sq_dist(X_new):
             
-            X_new = np.array(X_new).reshape(-1,1)
-
+            X_new = np.array(X_new)
             t1 = self.k.compute(X_new, X_new)
-
             t2 = np.array([self.k.compute(x_i, X_new)
                             for x_i in self.X]).transpose().dot(self.chis_)
-            
             ret = t1 -2*t2 + self.fixed_term_
-            
             return ret
 
         self.fuzzifier.x_to_sq_dist = x_to_sq_dist
@@ -147,9 +143,8 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
         self.estimated_membership_ = self._fix_object_state(X, y)
 
-        self.train_error_ = np.mean([(self.estimated_membership_(x) - mu) ** 2
-                                     for x, mu in zip(X, y)])
-
+        self.train_error_ = np.mean((self.estimated_membership_(X) - y) ** 2)
+                        
         return self
 
     def decision_function(self, X):
@@ -209,8 +204,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         if self.estimated_membership_ is None:
             return -np.inf
         else:
-            return -np.mean([(self.estimated_membership_(x) - mu) ** 2
-                             for x, mu in zip(X, y)])
+            return -np.mean((self.estimated_membership_(X) - y) ** 2)
 
     def __getstate__(self):
         """Return a serializable description of the fuzzifier."""
