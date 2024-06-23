@@ -1,0 +1,13 @@
+authors:
+  - family-names: Malchiodi
+    given-names: Dario
+
+identifiers:
+  - description: "This is the collection of archived snapshots of all versions of My Research Software"
+    type: doi
+    value: https://doi.org/10.1007/978-3-319-03200-9_6
+
+license: Apache-2.0
+repository-code: "https://github.com/Absinthe31/mulearn"
+title: "mulearn"
+version: 0.1.8
