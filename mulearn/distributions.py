@@ -8,8 +8,11 @@ randomized model selection.
 from scipy.stats import uniform
 from scipy.stats import rv_continuous
 
-from mulearn.kernel import GaussianKernel
-from mulearn.fuzzifier import ExponentialFuzzifier
+import kernel
+import fuzzifier
+
+#from kernel import GaussianKernel
+#from fuzzifier import ExponentialFuzzifier
 
 
 class GaussianKernelDistribution(rv_continuous):

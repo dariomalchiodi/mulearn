@@ -21,7 +21,7 @@ import logging
 
 import copy
 
-import mulearn.kernel
+import kernel
 
 logger = logging.getLogger(__name__)
 

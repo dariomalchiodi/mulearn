@@ -4,6 +4,7 @@ This module implements the kernel used in mulearn.
 """
 
 import numpy as np
+from itertools import zip_longest
 
 
 class Kernel:
@@ -277,6 +278,7 @@ class PrecomputedKernel(Kernel):
             raise ValueError('The supplied matrix is not square')
 
         self.kernel_computations = kernel_computations
+        
 
     def compute(self, arg_1, arg_2):
         r"""Compute the kernel value.
@@ -287,11 +289,18 @@ class PrecomputedKernel(Kernel):
 
         :param arg_1: First kernel array argument.
         :type arg_1: Object
+        :param arg_2: Second kernel array argument.
+        :type arg_2: Object
         :returns: `array` -- kernel values.
         """
-        
-        return float(self.kernel_computations[arg_1[0]][arg_2[0]])
 
+        arg_1 = arg_1.reshape(len(arg_1),1)
+        z = np.array(list(zip_longest(arg_1,arg_2,fillvalue=arg_1[0]))).reshape(len(arg_2),2)
+
+        return self.kernel_computations[z[:,0], z[:,1]].reshape(len(arg_2),)
+        #return np.array([self.kernel_computations[x,y] for x,y in z]).reshape(len(arg_2),)
+
+    
     def __repr__(self):
         """Return the python representation of the kernel."""
         return f"PrecomputedKernel({self.kernel_computations})"

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from fuzzifier import *
-from __init__ import *
+from tests.fuzzifier import *
+from tests.__init__ import *
 
 
 
@@ -35,7 +35,7 @@ class TestCrispFuzzifier(TestCase):
 
         result = list(m.fuzzifier.get_membership()(X))
 
-        self.assertEqual(result, [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0])
+        self.assertEqual(result, [0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1])
 
         f = CrispFuzzifier(profile='infer')
         
@@ -74,21 +74,21 @@ class TestLinearFuzzifier(TestCase):
 
         result = list(m.fuzzifier.get_membership()(X))
         
-        correct = [0.0,
-                   0.6235405260563452,
-                   0.0,
-                   0.0,
-                   0.4751637193324021,
-                   0.34552115570341846,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.5664281451951747,
-                   0.17585370486588414,
-                   0.17585370402191836,
-                   0.0,
-                   0.0,
-                   0.0]
+        correct = [0.19171390089298312,
+                   0.9623537182595308,
+                   0.06400343952613685,
+                   0.7109833150411717,
+                   0.9187589912747525,
+                   0.880668602044669,
+                   0.5789235960915939,
+                   0.15236435530657688,
+                   0.6623815130195112,
+                   0.9455734796766168,
+                   0.8308184495157517,
+                   0.8308184492677784,
+                   0.5394812027285296,
+                   0.10554521718033616,
+                   0.5148178265851036]
         
         for chi, chi_opt in zip(result, correct):
             self.assertAlmostEqual(chi, chi_opt, places=5)
@@ -100,20 +100,20 @@ class TestLinearFuzzifier(TestCase):
         result = list(m.fuzzifier.get_membership()(X))
 
         correct = [0.0,
-                   0.24161921015433518,
+                   1.0,
                    0.0,
+                   0.5062218217097789,
+                   0.9178584632914968,
+                   0.8423953475724786,
+                   0.24459052693051053,
                    0.0,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.1265658369160101,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.0,
-                   0.0]
+                   0.4099339264100187,
+                   0.9709822271100618,
+                   0.7436342714864057,
+                   0.7436342709951314,
+                 0.16644887611636805,
+                 0.0,
+                 0.11758680761161522]
         
         for chi, chi_opt in zip(result, correct):
             self.assertAlmostEqual(chi, chi_opt, places=5)

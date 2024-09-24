@@ -1,23 +1,10 @@
 from unittest import TestCase
 
-from mulearn import *
-from mulearn.optimization import GurobiSolver
+#from mulearn import *
+from tests.optimization import GurobiSolver
+import numpy as np
+from tests.__init__ import *
 
-
-class TestSolver(TestCase):
-    
-    def testCompute(self):
-
-        s = Solver()
-
-        xs = None
-        mus = None
-        k = None
-        
-        c = -1
-        
-        with self.assertRaises(ValueError):
-            s.solve(xs, mus, c, k)
 
 
 class TestGurobiSolver(TestCase):

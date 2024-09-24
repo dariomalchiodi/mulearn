@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from kernel import *
+from tests.kernel import *
 
 
 class TestLinearKernel(TestCase):
@@ -12,9 +12,9 @@ class TestLinearKernel(TestCase):
                                    np.array((-1, 2, 5)).reshape(1,-1)), 9)
                          
         self.assertAlmostEqual(k.compute(np.array([1.2, -0.4, -2]).reshape(1,-1), 
-                                         np.array([4, 1.2, .5]).reshape(1,-1)), 3.32)
+                                         np.array([4, 1.2, .5]).reshape(1,-1))[0], 3.32)
         self.assertAlmostEqual(k.compute(np.array((1.2, -0.4, -2)).reshape(1,-1), 
-                                         np.array([4, 1.2, .5]).reshape(1,-1)), 3.32)
+                                         np.array([4, 1.2, .5]).reshape(1,-1))[0], 3.32)
 
         with self.assertRaises(ValueError):
             k.compute(np.array([1, 0, 1]).reshape(1,-1), 
@@ -113,14 +113,14 @@ class TestHyperbolicKernel(TestCase):
 class TestPrecomputedKernel(TestCase):
     def test_compute(self):
         with self.assertRaises(ValueError):
-            PrecomputedKernel(((1, 2), (3, 4, 5)))
+            PrecomputedKernel(np.array(((1, 2), (3, 4, 5))))
 
-        k = PrecomputedKernel(((1, 2), (3, 4)))
-        self.assertEqual(k.compute([1], [1]), 4.0)
-        self.assertEqual(k.compute([1], [0]), 3.0)
+        k = PrecomputedKernel(np.array(((1, 2), (3, 4))))
+        self.assertEqual(k.compute(np.array([1]).reshape(1,-1), np.array([1]).reshape(1,-1)), 4.0)
+        self.assertEqual(k.compute(np.array([1]).reshape(1,-1), np.array([0]).reshape(1,-1)), 3.0)
 
         with self.assertRaises(IndexError):
-            k.compute([1], [2])
+            k.compute(np.array([1]).reshape(1,-1), np.array([2]).reshape(1,-1))
 
-        with self.assertRaises(TypeError):
-            k.compute([0], [1.6])
+        with self.assertRaises(IndexError):
+            k.compute(np.array([0]).reshape(1,-1), np.array([1.6]).reshape(1,-1))

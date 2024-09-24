@@ -7,9 +7,12 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 from sklearn.exceptions import NotFittedError
 
-import mulearn.kernel as kernel
-from mulearn.optimization import GurobiSolver
-from mulearn.fuzzifier import ExponentialFuzzifier
+
+import kernel
+from optimization import GurobiSolver
+from fuzzifier import ExponentialFuzzifier
+#from optimization import GurobiSolver
+#from fuzzifier import ExponentialFuzzifier
 
 import logging
 
@@ -97,7 +100,9 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.fuzzifier.sq_radius_05 = np.mean(chi_sq_radius)
         self.fuzzifier.fit(X, y)
 
-        return self.fuzzifier.get_membership()
+        self.estimated_membership_ = self.fuzzifier.get_membership()
+
+        #return self.fuzzifier.get_membership()
 
     def fit(self, X, y, warm_start=False):
         r"""Induce the membership function starting from a labeled sample.
@@ -141,7 +146,8 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
         self.fixed_term_ = np.array(self.chis_).dot(self.gram_.dot(self.chis_))
 
-        self.estimated_membership_ = self._fix_object_state(X, y)
+        #self.estimated_membership_ = self._fix_object_state(X, y)
+        self._fix_object_state(X, y)
 
         self.train_error_ = np.mean((self.estimated_membership_(X) - y) ** 2)
                         

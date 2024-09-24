@@ -264,7 +264,6 @@ class LinearFuzzifier(Fuzzifier):
         check_array(X)
         check_X_y(X, y)
         R = self.x_to_sq_dist(X)**0.5
-
         
         sq_radius_1_guess = np.median(self.x_to_sq_dist(
                                       [x for x, mu in zip(X, y) 
@@ -277,11 +276,18 @@ class LinearFuzzifier(Fuzzifier):
                                       
         if self.profile == 'fixed':
             def r_to_mu(R_arg, sq_radius_1):
-                return [np.clip(1 - 0.5 *
-                                (r - sq_radius_1) /
-                                (self.sq_radius_05**0.5 - sq_radius_1),
-                                0, 1)
-                        for r in R_arg]
+
+                tmp = [np.clip(1 - 0.5 * (r - sq_radius_1) / (self.sq_radius_05**0.5 - sq_radius_1), 0, 1) for r in R_arg]
+
+                #print(tmp)
+                
+                return tmp
+                
+                #return [np.clip(1 - 0.5 *
+                #                (r - sq_radius_1) /
+                #                (self.sq_radius_05**0.5 - sq_radius_1),
+                #                0, 1)
+                #        for r in R_arg]
 
             p_opt, _ = curve_fit(r_to_mu, R, y,
                                  p0=(sq_radius_1_guess,),
@@ -437,7 +443,7 @@ class ExponentialFuzzifier(Fuzzifier):
 
             q = np.percentile(inner, 100 * self.alpha)
 
-            print(f'{100*self.alpha}-percentile is {q}')
+            #print(f'{100*self.alpha}-percentile is {q}')
 
             def r_to_mu(R_data, sq_radius_1):
                 return [np.clip(_safe_exp(np.log(self.alpha) /
