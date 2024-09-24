@@ -8,9 +8,9 @@ from sklearn.utils import check_random_state
 from sklearn.exceptions import NotFittedError
 
 
-import kernel
-from optimization import GurobiSolver
-from fuzzifier import ExponentialFuzzifier
+import mulearn.kernel as kernel
+from mulearn.optimization import GurobiSolver
+from mulearn.fuzzifier import ExponentialFuzzifier
 
 
 import logging
