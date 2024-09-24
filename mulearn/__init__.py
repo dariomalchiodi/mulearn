@@ -11,8 +11,7 @@ from sklearn.exceptions import NotFittedError
 import kernel
 from optimization import GurobiSolver
 from fuzzifier import ExponentialFuzzifier
-#from optimization import GurobiSolver
-#from fuzzifier import ExponentialFuzzifier
+
 
 import logging
 
