@@ -1,6 +1,6 @@
 # mulearn
 
-[![Documentation Status](https://readthedocs.org/projects/mulearn/badge/?version=latest)](https://mulearn.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/mulearn-mr/badge/?version=latest)](https://mulearn-mr.readthedocs.io/en/latest/?badge=latest)
 
 > A python package for inducing membership functions from labeled data
 

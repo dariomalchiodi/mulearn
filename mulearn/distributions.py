@@ -11,7 +11,6 @@ from scipy.stats import rv_continuous
 from mulearn.kernel import GaussianKernel
 from mulearn.fuzzifier import ExponentialFuzzifier
 
-
 class GaussianKernelDistribution(rv_continuous):
     """Uniform distribution for gaussian kernels."""
 
@@ -34,6 +33,7 @@ class GaussianKernelDistribution(rv_continuous):
             raise ValueError(f"the provided upper extreme {high} is lower or"
                              f"equal to the lower one {low}.")
         self.base_dist = uniform(loc=low, scale=high-low)
+
 
     def rvs(self, *args, **kwargs):
         """Generate a Gaussian kernel with uniformly distributed parameter.
