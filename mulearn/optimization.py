@@ -245,12 +245,12 @@ class GurobiSolver(Solver):
 
     
     def __repr__(self):
-        obj_repr = f"GurobiSolver("
+        args = []
 
-        for a in ('time_limit', 'adjustment', 'initial_values'):
+        for a in self.default_values:
             if self.__getattribute__(a) != self.default_values[a]:
-                obj_repr += f", {a}={self.__getattribute__(a)}"
-        return obj_repr + ")"
+                args.append(f"{a}={self.__getattribute__(a)}")
+        return f"{self.__class__.__name__}({', '.join(args)})"
 
 
 
