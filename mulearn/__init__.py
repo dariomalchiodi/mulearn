@@ -55,15 +55,9 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.fuzzifier = fuzzifier
         self.solver = solver
         self.random_state = random_state
-        self.estimated_membership_ = None
-        self.x_to_sq_dist_ = None
-        self.chis_ = None
-        self.gram_ = None
-        self.fixed_term_ = None
-        self.train_error_ = None
 
     def __repr__(self, **kwargs):
-        return f"FuzzyInductor(c={self.c}, k={self.k}, f={self.fuzzifier}, " \
+        return f"FuzzyInductor(c={self.c}, k={self.k}, fuzzifier={self.fuzzifier}, " \
                f"solver={self.solver})"
 
     def _fix_object_state(self, X, y):
@@ -134,6 +128,13 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
             if self.chis_ is None:
                 raise NotFittedError("chis variable are set to None")
             self.solver.initial_values = self.chis_
+        else:
+            self.estimated_membership_ = None
+            self.x_to_sq_dist_ = None
+            self.chis_ = None
+            self.gram_ = None
+            self.fixed_term_ = None
+            self.train_error_ = None
 
         if type(self.k) is kernel.PrecomputedKernel:
             idx = X.flatten()
@@ -189,6 +190,8 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
                 raise ValueError("alpha cut value should belong to [0, 1]"
                                  f" (provided {alpha})")
             return np.array([1 if mu >= alpha else 0 for mu in mus])
+        
+        
 
     def score(self, X, y, **kwargs):
         r"""Compute the fuzzifier score.
