@@ -1,29 +1,23 @@
 
 import copy
-import numpy as np
+import logging
+import warnings
 
+import numpy as np
+from scipy.optimize import OptimizeWarning
 from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.exceptions import NotFittedError, FitFailedWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
-from sklearn.exceptions import NotFittedError
 
-
+from mulearn.fuzzifier import ExponentialFuzzifier
 import mulearn.kernel as kernel
 from mulearn.optimization import GurobiSolver
-from mulearn.fuzzifier import ExponentialFuzzifier
-
-
-import logging
-
-import warnings
-from scipy.optimize import OptimizeWarning
-from sklearn.exceptions import FitFailedWarning
 
 logger = logging.getLogger(__name__)
 
 warnings.filterwarnings("ignore", category=OptimizeWarning)
 warnings.filterwarnings("ignore", category=FitFailedWarning)
-
 
 class FuzzyInductor(BaseEstimator, RegressorMixin):
     """FuzzyInductor class."""
@@ -55,49 +49,26 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.fuzzifier = fuzzifier
         self.solver = solver
         self.random_state = random_state
+        self.estimated_membership_ = None
+        self.x_to_sq_dist_ = None
+        self.chis_ = None
+        self.gram_ = None
+        self.fixed_term_ = None
+        self.train_error_ = None
 
     def __repr__(self, **kwargs):
-        return f"FuzzyInductor(c={self.c}, k={self.k}, fuzzifier={self.fuzzifier}, " \
+        return f"FuzzyInductor(c={self.c}, k={self.k}, f={self.fuzzifier}, " \
                f"solver={self.solver})"
+    
+    def x_to_sq_dist(self, X_new):
+        X_new = np.array(X_new)
+        t1 = self.k.compute(X_new, X_new)
+        t2 = np.array([self.k.compute(x_i, X_new)
+                        for x_i in self.X_]).transpose().dot(self.chis_)
+        ret = t1 -2 * t2 + self.fixed_term_
+        return ret
 
-    def _fix_object_state(self, X, y):
-        """Ensure object consistency."""
-        self.X = X
-        self.y = y
-
-        self.fuzzifier = copy.deepcopy(self.fuzzifier)
-
-        def x_to_sq_dist(X_new):
-            
-            X_new = np.array(X_new)
-            t1 = self.k.compute(X_new, X_new)
-            t2 = np.array([self.k.compute(x_i, X_new)
-                            for x_i in self.X]).transpose().dot(self.chis_)
-            ret = t1 -2*t2 + self.fixed_term_
-            return ret
-
-        self.fuzzifier.x_to_sq_dist = x_to_sq_dist
-
-        chi_SV_index = [i for i, (chi, mu) in enumerate(zip(self.chis_, y))
-                        if -self.c * (1 - mu) < chi < self.c * mu]
-
-        chi_sq_radius = list(x_to_sq_dist(X[chi_SV_index]))
-
-        if len(chi_sq_radius) == 0:
-            self.estimated_membership_ = None
-            self.train_error_ = np.inf
-            self.chis_ = None
-            logger.warning('No support vectors found')
-            return self
-
-        self.fuzzifier.sq_radius_05 = np.mean(chi_sq_radius)
-        self.fuzzifier.fit(X, y)
-
-        self.estimated_membership_ = self.fuzzifier.get_membership()
-
-        #return self.fuzzifier.get_membership()
-
-    def fit(self, X, y, warm_start=False):
+    def fit(self, X, y, warm_start=False, profile='fixed'):
         r"""Induce the membership function starting from a labeled sample.
 
         :param X: Vectors in data space.
@@ -115,6 +86,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         :returns: self -- the trained model.
         """
 
+        X = check_array(X)
         X, y = check_X_y(X, y)
 
         for e in y:
@@ -123,18 +95,13 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
             
         self.random_state = check_random_state(self.random_state)
 
+        self.X_ = X
+
         if warm_start:
             check_is_fitted(self, ["chis_"])
             if self.chis_ is None:
                 raise NotFittedError("chis variable are set to None")
             self.solver.initial_values = self.chis_
-        else:
-            self.estimated_membership_ = None
-            self.x_to_sq_dist_ = None
-            self.chis_ = None
-            self.gram_ = None
-            self.fixed_term_ = None
-            self.train_error_ = None
 
         if type(self.k) is kernel.PrecomputedKernel:
             idx = X.flatten()
@@ -144,12 +111,22 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         
         self.chis_ = self.solver.solve(X, y, self.c, self.gram_)
 
+        chi_SV_index = [i for i, (chi, mu) in enumerate(zip(self.chis_, y))
+                        if -self.c * (1 - mu) < chi < self.c * mu]
+        
         self.fixed_term_ = np.array(self.chis_).dot(self.gram_.dot(self.chis_))
+        chi_sq_radius = list(self.x_to_sq_dist(X[chi_SV_index]))
 
-        #self.estimated_membership_ = self._fix_object_state(X, y)
-        self._fix_object_state(X, y)
-
-        self.train_error_ = np.mean((self.estimated_membership_(X) - y) ** 2)
+        if len(chi_sq_radius) == 0:
+            self.estimated_membership_ = None
+            self.train_error_ = np.inf
+            self.chis_ = None
+            logger.warning('No support vectors found')
+            return self
+        
+        self.fuzzifier.sq_radius_05 = np.mean(chi_sq_radius)
+        self.fuzzifier.fit(self.x_to_sq_dist(X), y,
+                           np.mean(chi_sq_radius), profile=profile)
                         
         return self
 
@@ -163,7 +140,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, ['chis_', 'estimated_membership_'])
         X = check_array(X)
-        return self.estimated_membership_(X) # noqa
+        return self.fuzzifier.get_membership(self.x_to_sq_dist(X))
 
     def predict(self, X, alpha=None):
         r"""Compute predictions for membership to the set.
@@ -190,8 +167,6 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
                 raise ValueError("alpha cut value should belong to [0, 1]"
                                  f" (provided {alpha})")
             return np.array([1 if mu >= alpha else 0 for mu in mus])
-        
-        
 
     def score(self, X, y, **kwargs):
         r"""Compute the fuzzifier score.
@@ -212,24 +187,5 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         if self.estimated_membership_ is None:
             return -np.inf
         else:
-            return -np.mean((self.estimated_membership_(X) - y) ** 2)
+            return -np.mean((self.decision_function(X) - y) ** 2)
 
-    def __getstate__(self):
-        """Return a serializable description of the fuzzifier."""
-        d = copy.deepcopy(self.__dict__)
-        del d['estimated_membership_']
-        del d['x_to_sq_dist_']
-        #print(d)
-        return d
-
-    def __setstate__(self, d):
-        """Ensure fuzzifier consistency after deserialization."""
-        self.__dict__ = d
-        try:
-            check_is_fitted(self, ['chis_', 'estimated_membership_'])
-            self._fix_object_state(self.X, self.y)
-            self.__dict__['estimated_membership_'] = self.estimated_membership_
-            self.__dict__['x_to_sq_dist_'] = self.x_to_sq_dist_
-            self.fuzzifier.x_to_sq_dist = self.x_to_sq_dist_
-        except NotFittedError:
-            pass

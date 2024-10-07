@@ -30,7 +30,7 @@ try:
 
     gurobi_ok = True
 except ModuleNotFoundError:
-    logger.warning('gurobi not available')
+    # logger.warning('gurobi not available')
     gurobi_ok = False
 
 try:
@@ -45,7 +45,7 @@ try:
 
     logging.getLogger('tensorflow').setLevel(logging.ERROR)
 except ModuleNotFoundError:
-    logger.warning('tensorflow not available')
+    # logger.warning('tensorflow not available')
     tensorflow_ok = False
 
 try:
