@@ -3,8 +3,10 @@
 This module implements the kernel used in mulearn.
 """
 
-import numpy as np
 from itertools import zip_longest
+
+import json_fix
+import numpy as np
 
 
 class Kernel:
@@ -56,6 +58,15 @@ class Kernel:
         :returns: `LinearKernel()` -- the default kernel.
         """
         return LinearKernel()
+    
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+    def __json__(self):
+        return {'class': self.__class__.__name__} | self.__dict__
 
 
 class LinearKernel(Kernel):

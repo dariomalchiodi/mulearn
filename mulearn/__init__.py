@@ -10,7 +10,7 @@ from sklearn.exceptions import NotFittedError, FitFailedWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils import check_random_state
 
-from mulearn.fuzzifier import ExponentialFuzzifier
+import mulearn.fuzzifier as fuzzifier
 import mulearn.kernel as kernel
 from mulearn.optimization import GurobiSolver
 
@@ -19,13 +19,14 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=OptimizeWarning)
 warnings.filterwarnings("ignore", category=FitFailedWarning)
 
+
 class FuzzyInductor(BaseEstimator, RegressorMixin):
     """FuzzyInductor class."""
 
     def __init__(self,
                  c=1,
                  k=kernel.GaussianKernel(),
-                 fuzzifier=ExponentialFuzzifier(), # noqa
+                 fuzzifier=fuzzifier.ExponentialFuzzifier(),
                  solver=GurobiSolver(),
                  random_state=None):
         r"""Create an instance of :class:`FuzzyInductor`.
@@ -68,7 +69,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         ret = t1 -2 * t2 + self.fixed_term_
         return ret
 
-    def fit(self, X, y, warm_start=False, profile='fixed'):
+    def fit(self, X, y, warm_start=False):
         r"""Induce the membership function starting from a labeled sample.
 
         :param X: Vectors in data space.
@@ -126,7 +127,7 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         
         self.fuzzifier.sq_radius_05 = np.mean(chi_sq_radius)
         self.fuzzifier.fit(self.x_to_sq_dist(X), y,
-                           np.mean(chi_sq_radius), profile=profile)
+                           np.mean(chi_sq_radius))
                         
         return self
 
