@@ -1,0 +1,11 @@
+gurobipy
+ipywidgets
+json_fix
+kaleido
+matplotlib
+notebook
+numpy
+pandas
+plotly
+scikit-learn
+tqdm
