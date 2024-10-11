@@ -1,12 +1,12 @@
-from unittest import TestCase
 
-from tests.fuzzifier import *
-from tests.__init__ import *
+import numpy as np
+import unittest
+
+from mulearn import FuzzyInductor
+import mulearn.fuzzifier as fuzz
 
 
-
-
-class TestCrispFuzzifier(TestCase):
+class TestCrispFuzzifier(unittest.TestCase):
     def test_compute(self):
 
         X = np.array([[0.91232935],
@@ -25,27 +25,28 @@ class TestCrispFuzzifier(TestCase):
                       [0.95579843],
                       [0.23678875]])
         
-        mus = np.array([0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
-                        0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
-                        0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
+        mus = np.array(
+            [0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
+             0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
+             0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
 
-        f = CrispFuzzifier()
+        f = fuzz.CrispFuzzifier()
         
         m = FuzzyInductor(fuzzifier=f).fit(X, mus)
-
-        result = list(m.fuzzifier.get_membership()(X))
+        result = m.predict(X)
 
         self.assertEqual(result, [0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1])
 
-        f = CrispFuzzifier(profile='infer')
+        f = fuzz.CrispFuzzifier(profile='infer')
         
         m = FuzzyInductor(fuzzifier=f).fit(X, mus)
 
-        result = list(m.fuzzifier.get_membership()(X))
+        result = m.predict(X)
 
-        self.assertEqual(result, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        self.assertEqual(result, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                  1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
 
-class TestLinearFuzzifier(TestCase):
+class TestLinearFuzzifier(unittest.TestCase):
     def test_compute(self):
 
         X = np.array([[0.91232935],
@@ -64,15 +65,16 @@ class TestLinearFuzzifier(TestCase):
                       [0.95579843],
                       [0.23678875]])
         
-        mus = np.array([0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
-                        0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
-                        0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
+        mus = np.array(
+            [0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
+             0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
+             0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
 
-        f = LinearFuzzifier()
+        f = fuzz.LinearFuzzifier()
         
         m = FuzzyInductor(fuzzifier=f).fit(X, mus)
 
-        result = list(m.fuzzifier.get_membership()(X))
+        result = m.predict(X)
         
         correct = [0.19171390089298312,
                    0.9623537182595308,
@@ -91,13 +93,13 @@ class TestLinearFuzzifier(TestCase):
                    0.5148178265851036]
         
         for chi, chi_opt in zip(result, correct):
-            self.assertAlmostEqual(chi, chi_opt, places=5)
+            self.assertAlmostEqual(float(chi), chi_opt, places=5)
 
-        f = LinearFuzzifier(profile='infer')
+        f = fuzz.LinearFuzzifier(profile='infer')
         
         m = FuzzyInductor(fuzzifier=f).fit(X, mus)
 
-        result = list(m.fuzzifier.get_membership()(X))
+        result = m.predict(X)
 
         correct = [0.0,
                    1.0,
@@ -111,12 +113,13 @@ class TestLinearFuzzifier(TestCase):
                    0.9709822271100618,
                    0.7436342714864057,
                    0.7436342709951314,
-                 0.16644887611636805,
-                 0.0,
-                 0.11758680761161522]
+                   0.16644887611636805,
+                   0.0,
+                   0.11758680761161522]
         
         for chi, chi_opt in zip(result, correct):
             self.assertAlmostEqual(chi, chi_opt, places=5)
 
 
-        
+if __name__ == '__main__':
+    unittest.main()
