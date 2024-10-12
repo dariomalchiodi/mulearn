@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mulearn"
+authors = [
+  { name="Dario Malchiodi", email="dario.malchiodi@unimi.it" },
+]
+description = "A python package for inducing membership functions from labeled data"
+keywords = ["fuzzy set", "fuzzy membership", "machine learning"]
+readme = "README.md"
+requires-python = ">=3.6"
+dependencies = [
+  "json_fix",
+  "numpy",
+  "scipy",
+  "scikit-learn"
+]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Development status" :: 4 - Beta"
+]
+
+dynamic = ['version']
+
+[project.optional-dependencies]
+gurobi = ["gurobipy"]
+tensorflow = ["tensorflow"]
+
+[project.urls]
+Homepage = "https://github.com/dariomalchiodi/mulearn"
+Documentation = "https://mulearn-mr.readthedocs.io/"
+Issues = "https://github.com/dariomalchiodi/mulearn/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "mulearn.__version__"}
