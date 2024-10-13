@@ -27,7 +27,8 @@ jobs:
     - name: Build a binary wheel and a source tarball
       run: python3 -m build
     - name: Publish Python 🐍 distribution 📦 to PyPI 
-      env: PYPI_TOKEN = ${{ secrets.PYPI_TOKEN }}
+      env:
+        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       run: python -m twine upload dist/* --username __token__ \
                                          --passowrd $PYPI_TOKEN
 
