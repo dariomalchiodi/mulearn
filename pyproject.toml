@@ -10,12 +10,15 @@ authors = [
 description = "A python package for inducing membership functions from labeled data"
 keywords = ["fuzzy set", "fuzzy membership", "machine learning"]
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 dependencies = [
+  "gurobipy",
   "json_fix",
-  "numpy",
+  "numpy<2.0",
+  "tqdm",
   "scipy",
-  "scikit-learn"
+  "scikit-learn",
+  "tensorflow==2.17"
 ]
 license = {text = "Apache-2.0"}
 classifiers = [
@@ -25,10 +28,6 @@ classifiers = [
 ]
 
 dynamic = ['version']
-
-[project.optional-dependencies]
-gurobi = ["gurobipy"]
-tensorflow = ["tensorflow"]
 
 [project.urls]
 Homepage = "https://github.com/dariomalchiodi/mulearn"

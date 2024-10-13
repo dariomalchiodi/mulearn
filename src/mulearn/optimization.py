@@ -8,10 +8,6 @@ installed (notably, Gurobi and TensorFlow), emitting a warning otherwise.
 Note that at least one of these libraries is needed in order to solve the
 optimization problems involved in the fuzzy inference process.
 
-The module also checks the availability of tqdm, which is used in order to
-graphically depict the progress of some learning processes using a progress
-bar. However, this package is not strictly needed: if it is not installed,
-the above mentioned progress bars will not be displayed.
 """
 
 import numpy as np
@@ -37,7 +33,6 @@ try:
     import os
 
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    logging.getLogger('tensorflow').setLevel(logging.FATAL)
     import tensorflow as tf
 
     tensorflow_ok = True
