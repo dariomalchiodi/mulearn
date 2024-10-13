@@ -2,6 +2,8 @@ name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
 on:
   push:
+    tags:
+    - v*
 
 jobs:
   build:
@@ -26,10 +28,4 @@ jobs:
       run: python3 -m build
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-    - name: publish-to-conda
-      uses: fcakyon/conda-publish-action@v1.3
-      with:
-        subdir: 'conda'
-        anacondatoken: ${{ secrets.ANACONDA_TOKEN }}
-        platforms: 'win osx linux'
 
