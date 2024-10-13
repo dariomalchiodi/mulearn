@@ -29,6 +29,5 @@ jobs:
     - name: Publish Python 🐍 distribution 📦 to PyPI 
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: python -m twine upload dist/* --username __token__ \
-                                         --password $PYPI_TOKEN
+      run: python -m twine upload dist/* -u __token__ -p $PYPI_TOKEN
 
