@@ -6,9 +6,6 @@ on:
 jobs:
   build:
     name: Build distribution 📦
-    env:
-      TWINE_USERNAME: "__token__"
-      TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -27,9 +24,12 @@ jobs:
       run: pip install -r requirements.txt
     - name: Build a binary wheel and a source tarball
       run: python3 -m build
-    - name: Publish Python 🐍 distribution 📦 to PyPI 
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: "__token__"
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        TWINE_REPOSITORY_URL: "https://test.pypi.org/legacy/"
       run: |
-
         echo KEY: "${TWINE_PASSWORD}"
         python -m twine upload dist/*
 
