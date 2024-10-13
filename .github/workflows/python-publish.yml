@@ -21,7 +21,7 @@ jobs:
       with:
         python-version: "3.x"
     - name: Install pypa/build
-      run: python3 -m pip install build twine --user
+      run: python3 -m pip install --upgrade build twine
     - name: Install dependencies
       run: pip install -r requirements.txt
     - name: Build a binary wheel and a source tarball
@@ -29,5 +29,5 @@ jobs:
     - name: Publish Python 🐍 distribution 📦 to PyPI 
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: python -m twine upload dist/* -u __token__ -p $PYPI_TOKEN
+      run: python -m twine upload dist/* --user __token__ --password $PYPI_TOKEN
 
