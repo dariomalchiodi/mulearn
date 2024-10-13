@@ -191,4 +191,8 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
             return -np.inf
         else:
             return -np.mean((self.decision_function(X) - y) ** 2)
+        
+    def get_profile(self):
+      check_is_fitted(self, ['chis_', 'estimated_membership_'])
+      return self.fuzzifier.get_profile(self.x_to_sq_dist(self.X_))
 

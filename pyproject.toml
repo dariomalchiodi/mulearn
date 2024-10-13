@@ -41,5 +41,5 @@ include-package-data = false
 version = {attr = "mulearn.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 exclude = ["tests*", "v0.1.8*"]

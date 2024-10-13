@@ -41,7 +41,7 @@ class Fuzzifier:
         raise NotImplementedError(
             'The base class does not implement the `get_membership` method')
 
-    def get_profile(self, X):
+    def get_profile(self, squared_R):
         r"""Return information about the learnt membership function profile.
 
         The profile of a membership function $\mu: X \rightarrow [0, 1]$ is
@@ -72,11 +72,9 @@ class Fuzzifier:
         :returns: list -- $[r_{\mathrm{data}}, \tilde{r}_\mathrm{data}, e]$.
 
         """
-        rdata = list(self.x_to_sq_dist(X)**0.5)
-        #print(self.x_to_sq_dist(X))
-        rdata_synth = np.linspace(0, max(rdata) * 1.1, 200)
-        estimate = list(self._get_r_to_mu()(rdata_synth))
-        return [rdata, rdata_synth, estimate]
+        rdata_synth = np.linspace(0, max(squared_R) * 1.1, 200)
+        estimate = self.get_membership(rdata_synth)
+        return [squared_R, rdata_synth, estimate]
 
     def __str__(self):
         """Return the string representation of a fuzzifier."""
@@ -189,7 +187,7 @@ class CrispFuzzifier(Fuzzifier):
     
     def get_membership(self, R_2):
         check_is_fitted(self, 'threshold_')
-        return [1 if r_2 < self.threshold_ else 0 for r_2 in R_2]
+        return np.array([1 if r_2 < self.threshold_ else 0 for r_2 in R_2])
 
 
 class LinearFuzzifier(Fuzzifier):
@@ -307,8 +305,8 @@ class LinearFuzzifier(Fuzzifier):
 
     def get_membership(self, R_2):
         check_is_fitted(self, ['slope_', 'intercept_'])
-        return [np.clip(self.slope_ * r_2 + self.intercept_, 0, 1)
-                for r_2 in R_2]
+        return np.array([np.clip(self.slope_ * r_2 + self.intercept_, 0, 1)
+                         for r_2 in R_2])
 
 
 class ExponentialFuzzifier(Fuzzifier):
@@ -488,8 +486,7 @@ class QuantileConstantPiecewiseFuzzifier(Fuzzifier):
         assert len(squared_R) == len(mu)
 
         self.r_2_1_ = np.median([r_2 for r_2, m in zip(squared_R, mu)
-                               if m >= max(m)*0.99])
-        
+                               if m >= max(mu)*0.99])
         
         external_dist = [r_2 - self.r_2_1_ for r_2 in squared_R
                                            if r_2 > self.r_2_1_]
@@ -505,11 +502,11 @@ class QuantileConstantPiecewiseFuzzifier(Fuzzifier):
     
     def get_membership(self, R_2):
         check_is_fitted(self, ['r_2_1_', 'm_', 'q1_', 'q3_'])
-        return [1 if r_2 <= self.r_2_1_ \
-                else 0.75 if r_2 <= self.r_2_1_ + self.q1_ \
-                else 0.5 if r_2 <= self.r_2_1_ + self.m_ \
-                else 0.25 if r_2 <= self.r_2_1_ + self.q3_ \
-                else 0 for r_2 in R_2]
+        return np.array([1 if r_2 <= self.r_2_1_ \
+                         else 0.75 if r_2 <= self.r_2_1_ + self.q1_ \
+                         else 0.5 if r_2 <= self.r_2_1_ + self.m_ \
+                         else 0.25 if r_2 <= self.r_2_1_ + self.q3_ \
+                         else 0 for r_2 in R_2])
 
 
 class QuantileLinearPiecewiseFuzzifier(Fuzzifier):
@@ -554,7 +551,7 @@ class QuantileLinearPiecewiseFuzzifier(Fuzzifier):
         assert len(squared_R) == len(mu)
 
         self.r_2_1_ = np.median([r_2 for r_2, m in zip(squared_R, mu)
-                               if m >= max(m)*0.99])
+                               if m >= max(mu)*0.99])
         
         
         external_dist = [r_2 - self.r_2_1_ for r_2 in squared_R
@@ -572,15 +569,15 @@ class QuantileLinearPiecewiseFuzzifier(Fuzzifier):
         
     def get_membership(self, R_2):
         check_is_fitted(self, ['r_2_1_', 'm_', 'q1_', 'q3_'])
-        return [1 if r_2 <= self.r_2_1_ \
+        return np.array([1 if r_2 <= self.r_2_1_ \
                 else (-r_2+self.r_2_1_)/(4*self.m_) + 1 \
                             if r_2 <= self.r_2_1_+self.q1_ \
-                else (-r_2+self.r_2_1_+self.q1_)/(4*(self.m_-self.m_)) + 3/4 \
+                else (-r_2+self.r_2_1_+self.q1_)/(4*(self.m_-self.q1_)) + 3/4 \
                             if r_2 <= self.r_2_1_+self.m_ \
                 else (-r_2+self.r_2_1_+self.m_)/(4*(self.q3_-self.m_)) + 1/2 \
                             if r_2 <= self.r_2_1_+self.q3_ \
                 else (-r_2+self.r_2_1_+self.q3_)/(4*(self.max_-self.q3_)) + 1/4\
                             if r_2 <= self.r_2_1_+self.max_\
-                else 0 for r_2 in R_2]
+                else 0 for r_2 in R_2])
 
     
