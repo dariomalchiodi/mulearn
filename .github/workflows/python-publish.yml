@@ -21,7 +21,7 @@ jobs:
       with:
         python-version: "3.x"
     - name: Install pypa/build
-      run: python3 -m pip install build --user
+      run: python3 -m pip install build twine --user
     - name: Install dependencies
       run: pip install -r requirements.txt
     - name: Build a binary wheel and a source tarball
