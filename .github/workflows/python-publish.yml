@@ -31,6 +31,7 @@ jobs:
         TWINE_USERNAME: "__token__"
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       run: |
-        echo KEY: '${TWINE_PASSWORD}'
-        python -m twine --verbose upload dist/*
+
+        echo KEY: "${TWINE_PASSWORD}"
+        python -m twine upload dist/*
 
