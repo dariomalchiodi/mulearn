@@ -9,6 +9,10 @@ import json_fix
 import numpy as np
 
 
+def to_list(arg):
+    return arg.tolist()  if isinstance(arg, np.ndarray) else arg
+
+
 class Kernel:
     """Base kernel class."""
 
@@ -74,7 +78,7 @@ class LinearKernel(Kernel):
 
     def compute(self, arg_1, arg_2):
         r"""
-        Compute the kernel value.
+        Compute the kernel value over several arguments.
 
         The value $k(x_1, x_2)$ of a linear kernel is equal to the dot product
         $x_1 \cdot x_2$, that is to $\sum_{i=1}^n (x_1)_i (x_2)_i$, $n$ being
@@ -83,12 +87,12 @@ class LinearKernel(Kernel):
         k(y_m, z_m))$, $m$ being the number of elements in the arrays. 
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
-        return np.sum(arg_1 * arg_2, axis=1)
+        return np.sum(np.array(arg_1) * np.array(arg_2), axis=1)
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -123,12 +127,13 @@ class PolynomialKernel(Kernel):
         the number of elements in the arrays. 
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
-        return (np.sum(arg_1 * arg_2, axis=1) + 1) ** self.degree
+        return (np.sum(np.array(arg_1) * np.array(arg_2),
+                       axis=1) + 1) ** self.degree
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -158,12 +163,13 @@ class HomogeneousPolynomialKernel(PolynomialKernel):
         $m$ being the number of elements in the arrays. 
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
-        return np.sum(arg_1 * arg_2, axis=1) ** self.degree
+        return np.sum(np.array(arg_1) * np.array(arg_2),
+                      axis=1) ** self.degree
 
     def __repr__(self):
         """Return the python representation of the kernel."""
@@ -200,12 +206,12 @@ class GaussianKernel(Kernel):
         k(y_m, z_m))$, $m$ being the number of elements in the arrays. 
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
-        diff = np.linalg.norm(arg_1 - arg_2, axis=1) ** 2
+        diff = np.linalg.norm(np.array(arg_1) - np.array(arg_2), axis=1) ** 2
         return np.exp(-1. * diff / (2 * self.sigma ** 2))
 
     def __repr__(self):
@@ -242,15 +248,16 @@ class HyperbolicKernel(Kernel):
         quantity $\tanh(\alpha x_1 \cdot x_2 + \beta)$, $\alpha$ and $\beta$
         being the scale and offset parameters, respectively. Given the two 
         arrays of kernels $Y$ and $Z$, the return value will be $(k(y_1,z_1), 
-        k(y_2,z_2),..., k(y_m, z_m))$, $m$ being the number of elements in the arrays. 
+        k(y_2,z_2),..., k(y_m, z_m))$, $m$ being the number of elements in the
+        arrays. 
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
-        dot_orig = np.sum(arg_1 * arg_2, axis=1)
+        dot_orig = np.sum(np.array(arg_1) * np.array(arg_2), axis=1)
         return np.tanh(self.scale * dot_orig + self.offset)
 
     def __repr__(self):
@@ -288,7 +295,7 @@ class PrecomputedKernel(Kernel):
         if rows != columns:
             raise ValueError('The supplied matrix is not square')
 
-        self.kernel_computations = kernel_computations
+        self.kernel_computations = np.array(kernel_computations)
         
 
     def compute(self, arg_1, arg_2):
@@ -299,19 +306,26 @@ class PrecomputedKernel(Kernel):
         within an iterable in order to be compatible with sklearn.
 
         :param arg_1: First kernel array argument.
-        :type arg_1: Object
+        :type arg_1: Object convertible to np.array
         :param arg_2: Second kernel array argument.
-        :type arg_2: Object
+        :type arg_2: Object convertible to np.array
         :returns: `array` -- kernel values.
         """
+        
+        arg_1 = to_list(arg_1)
+        arg_2 = to_list(arg_2)
 
-        arg_1 = arg_1.reshape(len(arg_1),1)
-        z = np.array(list(zip_longest(arg_1,arg_2,fillvalue=arg_1[0]))).reshape(len(arg_2),2)
+        return [self.kernel_computations[a[0], b[0]]
+                for a in arg_1 for b in arg_2]
 
-        return self.kernel_computations[z[:,0], z[:,1]].reshape(len(arg_2),)
-        #return np.array([self.kernel_computations[x,y] for x,y in z]).reshape(len(arg_2),)
+        # arg_1 = arg_1.reshape(len(arg_1), 1)
+        # z = (np.array(list(zip_longest(arg_1, arg_2,fillvalue=arg_1[0])))
+        #        .reshape(len(arg_2), 2))
 
-    
+        # return self.kernel_computations[z[:,0], z[:,1]].reshape(len(arg_2),)
+        # #return (np.array([self.kernel_computations[x,y] for x,y in z])
+        # #          .reshape(len(arg_2),))
+
     def __repr__(self):
         """Return the python representation of the kernel."""
         return f"PrecomputedKernel({self.kernel_computations})"
