@@ -195,7 +195,7 @@ class GurobiSolver(Solver):
                     constEqual = LinExpr()
                     constEqual.add(sum(chis), 1.0)
     
-                    model.addConstr(constEqual, GRB.EQUAL, 1)
+                    model.addConstr(constEqual == 1)
     
                     try:
                         model.optimize()

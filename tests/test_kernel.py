@@ -132,10 +132,10 @@ class TestPrecomputedKernel(unittest.TestCase):
         k = kernel.PrecomputedKernel(np.array(((1, 2), (3, 4))))
         self.assertEqual(k.compute(
                     np.array([1]).reshape(1,-1),
-                    np.array([1]).reshape(1,-1)), 4.0)
+                    np.array([1]).reshape(1,-1)), [4.0])
         self.assertEqual(k.compute(
                     np.array([1]).reshape(1,-1),
-                    np.array([0]).reshape(1,-1)), 3.0)
+                    np.array([0]).reshape(1,-1)), [3.0])
 
         with self.assertRaises(IndexError):
             k.compute(np.array([1]).reshape(1,-1), np.array([2]).reshape(1,-1))

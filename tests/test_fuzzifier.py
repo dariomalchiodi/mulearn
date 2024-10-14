@@ -9,116 +9,134 @@ import mulearn.fuzzifier as fuzz
 class TestCrispFuzzifier(unittest.TestCase):
     def test_compute(self):
 
-        X = np.array([[0.91232935],
-                      [0.49196389],
-                      [0.01257953],
-                      [0.65664674],
-                      [0.44446359],
-                      [0.4211273 ],
-                      [0.72152853],
-                      [0.05744546],
-                      [0.30902402],
-                      [0.52455777],
-                      [0.39387502],
-                      [0.59580251],
-                      [0.24884305],
-                      [0.95579843],
-                      [0.23678875]])
-        
-        mus = np.array(
-            [0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
-             0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
-             0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
+        squared_R = np.array([1, 3, 6, 12, 34, 416])
+        mu = np.array([1, .9, .5, .3, .2, .1])
 
-        f = fuzz.CrispFuzzifier()
-        
-        m = FuzzyInductor(fuzzifier=f).fit(X, mus)
-        result = m.predict(X)
+        f = fuzz.CrispFuzzifier(profile='fixed')
 
-        self.assertEqual(result, [0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1])
+        f.fit(squared_R, mu, 2)
+        self.assertTrue(set(f.get_membership(squared_R)) <= {0, 1})
 
-        f = fuzz.CrispFuzzifier(profile='infer')
-        
-        m = FuzzyInductor(fuzzifier=f).fit(X, mus)
+        target = np.array([1, 0, 0, 0, 0, 0])
+        result = f.get_membership(squared_R)
+        self.assertTrue((result==target).all())
 
-        result = m.predict(X)
+        f = fuzz.CrispFuzzifier(profile='infer')   
+        f.fit(squared_R, mu, 2)
+        self.assertTrue(set(f.get_membership(squared_R)) <= {0, 1})
 
-        self.assertEqual(result, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                  1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        target = np.array([0, 0, 0, 0, 0, 0])
+        result = f.get_membership(squared_R)
+        self.assertTrue((result==target).all())
 
 class TestLinearFuzzifier(unittest.TestCase):
     def test_compute(self):
 
-        X = np.array([[0.91232935],
-                      [0.49196389],
-                      [0.01257953],
-                      [0.65664674],
-                      [0.44446359],
-                      [0.4211273 ],
-                      [0.72152853],
-                      [0.05744546],
-                      [0.30902402],
-                      [0.52455777],
-                      [0.39387502],
-                      [0.59580251],
-                      [0.24884305],
-                      [0.95579843],
-                      [0.23678875]])
-        
-        mus = np.array(
-            [0.00836525, 0.99818461, 0.00124992, 0.5013639 , 0.91687722,
-             0.83942725, 0.25137643, 0.0040433 , 0.35836777, 0.98317438,
-             0.72841124, 0.77240852, 0.16950794, 0.00289302, 0.14237189])
+        squared_R = np.array([1, 3, 6, 12, 34, 416])
+        mu = np.array([1, .9, .5, .3, .2, .1])
 
-        f = fuzz.LinearFuzzifier()
-        
-        m = FuzzyInductor(fuzzifier=f).fit(X, mus)
+        f = fuzz.LinearFuzzifier(profile='fixed')
 
-        result = m.predict(X)
-        
-        correct = [0.19171390089298312,
-                   0.9623537182595308,
-                   0.06400343952613685,
-                   0.7109833150411717,
-                   0.9187589912747525,
-                   0.880668602044669,
-                   0.5789235960915939,
-                   0.15236435530657688,
-                   0.6623815130195112,
-                   0.9455734796766168,
-                   0.8308184495157517,
-                   0.8308184492677784,
-                   0.5394812027285296,
-                   0.10554521718033616,
-                   0.5148178265851036]
-        
-        for chi, chi_opt in zip(result, correct):
-            self.assertAlmostEqual(float(chi), chi_opt, places=5)
+        f.fit(squared_R, mu, 2)
+        self.assertIsInstance(f.slope_, (int, float))
+        self.assertIsInstance(f.intercept_, (int, float))
+        self.assertTrue(f.slope_ < 0)
+
+        target = np.array([1, 0, 0, 0, 0, 0])
+        result = f.get_membership(squared_R)
+        self.assertTrue((result==target).all())
+
+        f = fuzz.LinearFuzzifier(profile='triangular')
+
+        f.fit(squared_R, mu, 2)
+        self.assertIsInstance(f.slope_, (int, float))
+        self.assertIsInstance(f.intercept_, (int, float))
+        self.assertTrue(f.slope_ < 0)
+
+        target = np.array([0.99763019, 0.99289056, 0.98578113,
+                           0.97156225, 0.91942638, 0.01415807])
+        result = f.get_membership(squared_R)
+        for t, r in zip(target, result):
+            self.assertAlmostEqual(t, r)
 
         f = fuzz.LinearFuzzifier(profile='infer')
-        
-        m = FuzzyInductor(fuzzifier=f).fit(X, mus)
 
-        result = m.predict(X)
+        f.fit(squared_R, mu, 2)
+        self.assertIsInstance(f.slope_, (int, float))
+        self.assertIsInstance(f.intercept_, (int, float))
+        self.assertTrue(f.slope_ < 0)
 
-        correct = [0.0,
-                   1.0,
-                   0.0,
-                   0.5062218217097789,
-                   0.9178584632914968,
-                   0.8423953475724786,
-                   0.24459052693051053,
-                   0.0,
-                   0.4099339264100187,
-                   0.9709822271100618,
-                   0.7436342714864057,
-                   0.7436342709951314,
-                   0.16644887611636805,
-                   0.0,
-                   0.11758680761161522]
+        target = np.array([0.60031447, 0.59773126, 0.59385645,
+                           0.58610684, 0.55769158, 0.06429942])
+        result = f.get_membership(squared_R)
+        for t, r in zip(target, result):
+            self.assertAlmostEqual(t, r)
+
         
-        for chi, chi_opt in zip(result, correct):
-            self.assertAlmostEqual(chi, chi_opt, places=5)
+class TestExponentialFuzzifier(unittest.TestCase):
+    def test_compute(self):
+
+        squared_R = np.array([1, 3, 6, 12, 34, 416])
+        mu = np.array([1, .9, .5, .3, .2, .1])
+
+        f = fuzz.ExponentialFuzzifier(profile='fixed')
+
+        f.fit(squared_R, mu, 5)
+        self.assertIsInstance(f.slope_, (int, float))
+        self.assertIsInstance(f.intercept_, (int, float))
+        self.assertTrue(f.slope_ < 0)
+
+        target = np.array([1.00000000e+00, 7.79143601e-01, 4.00540331e-01,
+                           1.05853139e-01, 8.04602165e-04, 1.28797649e-40])
+        result = f.get_membership(squared_R)
+        for t, r in zip(target, result):
+            self.assertAlmostEqual(t, r)
+
+        f = fuzz.ExponentialFuzzifier(profile='infer')
+
+        f.fit(squared_R, mu, 5)
+        self.assertIsInstance(f.slope_, (int, float))
+        self.assertIsInstance(f.intercept_, (int, float))
+        self.assertTrue(f.slope_ < 0)
+
+        target = np.array([1.00000000e+00, 8.49986669e-01, 5.87419583e-01,
+                           2.80556951e-01, 1.86761467e-02, 6.90097154e-23])
+        result = f.get_membership(squared_R)
+        for t, r in zip(target, result):
+            self.assertAlmostEqual(t, r)
+
+        target = [
+            np.array([1.00000000e+000, 1.00000000e+000, 4.96678058e-001,
+                      2.37588306e-003, 7.38315600e-012, 1.39850564e-159]),
+            np.array([1.00000000e+00, 1.00000000e+00, 4.81156517e-01,
+                      1.11393302e-01, 5.21145506e-04, 1.82566559e-44]),
+            np.array([1.00000000e+00, 8.87724624e-01, 4.09013407e-01,
+                      8.68272604e-02, 2.95590722e-04, 4.14800012e-47]),
+            np.array([1.00000000e+00, 8.42106726e-01, 6.00356674e-01,
+                      3.05136216e-01, 2.55154525e-02, 4.94512909e-21]),
+            np.array([9.91487538e-01, 8.35522108e-01, 6.46344377e-01,
+                      3.86790709e-01, 5.88645164e-02, 3.74071500e-16]),
+            np.array([9.58324529e-01, 8.80111737e-01, 7.74596670e-01,
+                      6.00000000e-01, 2.35195248e-01, 2.03818374e-08]),
+            np.array([0.98461202, 0.95454278, 0.91115192,
+                      0.83019782, 0.59022078, 0.00157868]),
+            np.array([0.99345844, 0.98050343, 0.96138697,
+                      0.92426491, 0.8, 0.06520449]),
+            np.array([0.99953184, 0.99859618, 0.99719433,
+                      0.99439653, 0.98420493, 0.82299933])
+        ]
+
+        for t, alpha in enumerate(np.linspace(0.1, 0.9, 9)):
+            f = fuzz.ExponentialFuzzifier(profile=alpha)
+
+            f.fit(squared_R, mu, 5)
+            self.assertIsInstance(f.slope_, (int, float))
+            self.assertIsInstance(f.intercept_, (int, float))
+            self.assertTrue(f.slope_ < 0)
+
+            result = f.get_membership(squared_R)
+            for t, r in zip(target[t], result):
+                self.assertAlmostEqual(t, r)
 
 
 if __name__ == '__main__':

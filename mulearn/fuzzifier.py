@@ -175,8 +175,9 @@ class CrispFuzzifier(Fuzzifier):
                 result[r > threshold] = 0
                 return result
 
-            self.threshold_, _ = curve_fit(r2_to_mu, squared_R, mu, 
-                                          bounds=((0,), (np.inf,)))
+            [t_opt], _ = curve_fit(r2_to_mu, squared_R, mu, 
+                                   bounds=((0,), (np.inf,)))
+            self.threshold_ = t_opt
             
             if self.threshold_ < 0:
                 raise ValueError("Profile fit returned a negative parameter")
@@ -258,9 +259,9 @@ class LinearFuzzifier(Fuzzifier):
                 
                 return result
 
-            r_2_1_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                 p0=(r_2_1_guess,),
-                                 bounds=((0,), (np.inf,)))
+            [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                       p0=(r_2_1_guess,),
+                                       bounds=((0,), (np.inf,)))
             self.slope_ = -1 / (2 * (squared_radius - r_2_1_opt))
             self.intercept_ = 1 + r_2_1_opt / (2 * (squared_radius - r_2_1_opt))
         
@@ -275,9 +276,9 @@ class LinearFuzzifier(Fuzzifier):
                                 0, 1)
                         for r_2 in R_2]
 
-            r_2_05_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                 p0=(r_2_05_guess,),
-                                 bounds=((0,), (np.inf,)))
+            [r_2_05_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                        p0=(r_2_05_guess,),
+                                        bounds=((0,), (np.inf,)))
             self.slope_ = -1 / (2 * r_2_05_opt)
             self.intercept_ = 1
 
@@ -289,7 +290,8 @@ class LinearFuzzifier(Fuzzifier):
 
             p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
                                  p0=(r_2_1_guess, r_2_0_guess), 
-                                 bounds=((-np.inf, -np.inf), (np.inf, np.inf,)))
+                                 bounds=((-np.inf, -np.inf),
+                                         (np.inf, np.inf,)))
             r_2_1_opt, r_2_0_opt = p_opt
             self.slope_ = -1 / (r_2_0_opt - r_2_1_opt)
             self.intercept_ = 1 + r_2_1_opt / (r_2_0_opt - r_2_1_opt)
@@ -386,12 +388,12 @@ class ExponentialFuzzifier(Fuzzifier):
                     0, 1) for r_2 in R_2]
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                r_2_1_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                     p0=(r_2_1_guess,), maxfev=2000,
-                                     bounds=((0,), (np.inf,)))
-                self.slope_ = -np.log(2) / (squared_radius - r_2_1_opt)
-                self.intercept_ = r_2_1_opt * np.log(2)/(squared_radius - r_2_1_opt)
-            
+                [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                           p0=(r_2_1_guess,), maxfev=2000,
+                                           bounds=((0,), (np.inf,)))
+                denominator = squared_radius - r_2_1_opt
+                self.slope_ = -np.log(2) / denominator
+                self.intercept_ = r_2_1_opt * np.log(2) / denominator
 
         elif self.profile == "infer":
             def r2_to_mu(R_2, r_2_1, s):
@@ -418,9 +420,9 @@ class ExponentialFuzzifier(Fuzzifier):
                     # all points have within the sphere -> unit membership
                     return [1] * len(R_2)
 
-            r_2_1_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                     p0=(r_2_1_guess,),
-                                     bounds=((0,), (np.inf,)))
+            [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                       p0=(r_2_1_guess,),
+                                       bounds=((0,), (np.inf,)))
             inner = [r_2 - r_2_1_opt for r_2 in squared_R if r_2 > r_2_1_opt]
             q = np.percentile(inner, 100 * alpha)
             self.slope_ = np.log(alpha) / q
