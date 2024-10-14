@@ -73,5 +73,4 @@ class ExponentialFuzzifierDistribution(rv_continuous):
           fuzzifier having a parameter uniformly chosen at random in the
           interval having `self.low` and `self.high` as extremes.
         """
-        return ExponentialFuzzifier(profile="alpha",
-                                    alpha=self.base_dist.rvs())
+        return ExponentialFuzzifier(profile=self.base_dist.rvs())
