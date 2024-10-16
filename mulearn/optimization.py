@@ -233,7 +233,7 @@ class GurobiSolver(Solver):
                             logger.warning('gurobi: optimization terminated with a sub-optimal solution!')
 
                         else:
-                            raise ValueError(f'gurobi: optimal solution not found! ERROR CODE: {model.Status}')
+                            logger.warning(f'gurobi: optimal solution not found! ERROR CODE: {model.Status}')
                             
     
                     return [ch.x for ch in chis]

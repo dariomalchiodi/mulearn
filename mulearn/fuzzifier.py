@@ -3,6 +3,7 @@
 """
 
 import copy
+import logging
 import warnings
 
 import json_fix
@@ -11,6 +12,8 @@ from scipy.optimize import curve_fit
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 np.seterr(over='ignore')
+
+logger = logging.getLogger(__name__)
 
 def _safe_exp(r):
     with np.errstate(over="raise"):
@@ -180,7 +183,7 @@ class CrispFuzzifier(Fuzzifier):
             self.threshold_ = t_opt
             
             if self.threshold_ < 0:
-                raise ValueError("Profile fit returned a negative parameter")
+                logger.warning("Profile fit returned a negative parameter")
             
         else:
             raise ValueError("'profile' parameter should either be equal to "
@@ -299,9 +302,9 @@ class LinearFuzzifier(Fuzzifier):
             raise ValueError("'profile' parameter should be equal to "
                         "'fixed' or 'infer' (provided value: {self.profile})")
         if self.slope_ > 0:
-            raise ValueError('Profile fitting returned a positive slope')
+            logging.warning('Profile fitting returned a positive slope')
         if self.intercept_ < 0:
-            raise ValueError('Profile fitting returned a negative intercept')
+            logging.warning('Profile fitting returned a negative intercept')
         
         return self
 
@@ -432,6 +435,11 @@ class ExponentialFuzzifier(Fuzzifier):
             raise ValueError("'self.profile' attribute should be equal to "
                              "'infer', 'fixed' or 'alpha' "
                              f"(provided value: {self.profile})")
+        
+        if self.slope_ > 0:
+            logging.warning('Profile fitting returned a positive slope')
+        if self.intercept_ < 0:
+            logging.warning('Profile fitting returned a negative intercept')
         
         return self
     
