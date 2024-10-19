@@ -31,7 +31,7 @@ dynamic = ['version']
 
 [project.urls]
 Homepage = "https://github.com/dariomalchiodi/mulearn"
-Documentation = "https://mulearn-mr.readthedocs.io/"
+Documentation = "https://mulearn.readthedocs.io/"
 Issues = "https://github.com/dariomalchiodi/mulearn/issues"
 
 [tool.setuptools]

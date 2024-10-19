@@ -1,4 +1,4 @@
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 
 import copy
@@ -53,15 +53,24 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
         self.solver = solver
         self.random_state = random_state
         self.estimated_membership_ = None
-        self.x_to_sq_dist_ = None
         self.chis_ = None
         self.gram_ = None
         self.fixed_term_ = None
-        self.train_error_ = None
 
     def __repr__(self, **kwargs):
         return f"FuzzyInductor(c={self.c}, k={self.k}, f={self.fuzzifier}, " \
                f"solver={self.solver})"
+    
+    def __eq__(self, other):
+        """Check equality w.r.t. other objects."""
+        equal = (type(self) is type(other) and \
+                 self.c == other.c and self.k == other.k and \
+                self.fuzzifier == other.fuzzifier)
+        if 'chis_' in self.__dict__:
+            if 'chis_' not in other.__dict__:
+                return False
+            else:
+                return equal and (self.chis_ == other.chis_)
     
     def x_to_sq_dist(self, X_new):
         X_new = np.array(X_new)
@@ -122,7 +131,6 @@ class FuzzyInductor(BaseEstimator, RegressorMixin):
 
         if len(chi_sq_radius) == 0:
             self.estimated_membership_ = None
-            self.train_error_ = np.inf
             self.chis_ = None
             logger.warning('No support vectors found')
             return self

@@ -94,6 +94,10 @@ class Solver:
                     for ch, l, u in zip(chis, -c * (1 - mus), c * mus)] # noqa
 
         return chis_opt
+    
+    def __eq__(self, other):
+        """Check solver equality w.r.t. other objects."""
+        return type(self) is type(other) and self.__dict__ == other.__dict__
 
 
 class GurobiSolver(Solver):

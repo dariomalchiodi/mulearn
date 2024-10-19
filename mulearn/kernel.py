@@ -40,7 +40,7 @@ class Kernel:
 
     def __eq__(self, other):
         """Check kernel equality w.r.t. other objects."""
-        return type(self) == type(other)
+        return type(self) is type(other) and self.__dict__ == other.__dict__
 
     def __ne__(self, other):
         """Check kernel inequality w.r.t. other objects."""
@@ -134,7 +134,11 @@ class PolynomialKernel(Kernel):
         """
         return (np.sum(np.array(arg_1) * np.array(arg_2),
                        axis=1) + 1) ** self.degree
-
+    
+    def __eq__(self, other):
+        """Check kernel equality w.r.t. other objects."""
+        return type(self) == type(other) and self.degree == other.degree
+    
     def __repr__(self):
         """Return the python representation of the kernel."""
         return f"PolynomialKernel({self.degree})"

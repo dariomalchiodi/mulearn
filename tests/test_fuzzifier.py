@@ -2,6 +2,8 @@
 import numpy as np
 import unittest
 
+from sklearn.datasets import load_iris
+
 from mulearn import FuzzyInductor
 import mulearn.fuzzifier as fuzz
 
@@ -137,6 +139,13 @@ class TestExponentialFuzzifier(unittest.TestCase):
             result = f.get_membership(squared_R)
             for t, r in zip(target[t], result):
                 self.assertAlmostEqual(t, r)
+
+class TestFuzzifierSerialization(unittest.TestCase):
+    def test_dump(self):
+        X, y = load_iris()
+
+    def test_serialization(self):
+        pass
 
 
 if __name__ == '__main__':

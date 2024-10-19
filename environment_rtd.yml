@@ -16,6 +16,7 @@ dependencies:
   #- jupyter_client=6.1
   #- jupyter_core=4.7
   #- keras-preprocessing=1.1
+  - json_fix
   - markdown=3.3
   #- matplotlib=3.3
   #- matplotlib-base=3.3

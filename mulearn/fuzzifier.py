@@ -85,7 +85,7 @@ class Fuzzifier:
 
     def __eq__(self, other):
         """Check fuzzifier equality w.r.t. other objects."""
-        return type(self) == type(other)
+        return type(self) is type(other) and self.__dict__ == other.__dict__
 
     def __ne__(self, other):
         """Check fuzzifier inequality w.r.t. other objects."""
