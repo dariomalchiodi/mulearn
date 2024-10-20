@@ -21,7 +21,7 @@ jobs:
       with:
         python-version: "3.x"
     - name: Perform tests
-      run: python3 -m unittest iscover tests
+      run: python3 -m unittest discover tests
     - name: Install pypa/build
       run: python3 -m pip install --upgrade build twine
     - name: Install dependencies
