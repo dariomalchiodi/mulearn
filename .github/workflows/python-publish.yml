@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
+    - name: Perform tests
+    - run: python3 -m unittest iscover tests
     - name: Install pypa/build
       run: python3 -m pip install --upgrade build twine
     - name: Install dependencies
