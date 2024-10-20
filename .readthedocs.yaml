@@ -14,5 +14,10 @@ build:
 sphinx:
   configuration: docs/conf.py
 
-conda:
-  environment: environment_rtd.yml
+# conda:
+#   environment: environment_rtd.yml
+
+python:
+  install:
+    #- requirements: docs/requirements.txt
+    - requirements: requirements.txt
