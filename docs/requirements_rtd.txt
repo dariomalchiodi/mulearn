@@ -1,4 +1,5 @@
-docutils==0.16#=py37h89c1867_2
+docutils==0.16
+# was=py37h89c1867_2
 jinja2==3.0.0
 json_fix
 markdown==3.3
