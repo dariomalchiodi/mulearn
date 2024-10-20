@@ -18,8 +18,7 @@ class Kernel:
 
     def __init__(self):
         """Create an instance of :class:`Kernel`."""
-        self.precomputed = False
-        self.kernel_computations = None
+        pass
 
     def compute(self, arg_1, arg_2):
         """Compute the kernel value, given two arrays of arguments.
@@ -290,7 +289,6 @@ class PrecomputedKernel(Kernel):
           bidimensional array.
         """
         super().__init__()
-        self.precomputed = True
         try:
             (rows, columns) = np.array(kernel_computations).shape
         except ValueError:
@@ -333,3 +331,9 @@ class PrecomputedKernel(Kernel):
     def __repr__(self):
         """Return the python representation of the kernel."""
         return f"PrecomputedKernel({self.kernel_computations})"
+
+    def __eq__(self, other):
+        """Check kernel equality w.r.t. other objects."""
+        return type(self) is type(other) \
+            and np.array_equal(self.kernel_computations,
+                               other.kernel_computations)

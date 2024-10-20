@@ -1,11 +1,35 @@
-
+import json
 import numpy as np
+import os
+import pickle
 import unittest
 
 import mulearn.kernel as kernel
 
+class BaseTest:
+    def _test_serialize(self, kernel):
+        s = pickle.dumps(kernel)  
+        kernel_clone = pickle.loads(s)
+        self.assertEqual(kernel, kernel_clone)
+    
+    def _test_persist(self, kernel):
+        with open('object.pickle', 'wb') as f:
+            pickle.dump(kernel, f)
 
-class Test_LinearKernel(unittest.TestCase):
+        with open('object.pickle', 'rb') as f:
+            kernel_clone = pickle.load(f)
+
+        os.remove('object.pickle')
+
+        self.assertEqual(kernel, kernel_clone)
+    
+    def _test_json(self, kernel, target):
+        s = json.dumps(kernel)
+        repr = json.loads(s)
+        self.assertEqual(repr, target)
+
+
+class Test_LinearKernel(BaseTest, unittest.TestCase):
     def test_compute(self):
         k =kernel.LinearKernel()
         self.assertEqual(k.compute(np.array([1, 0, 1]).reshape(1,-1), 
@@ -23,9 +47,19 @@ class Test_LinearKernel(unittest.TestCase):
         with self.assertRaises(ValueError):
             k.compute(np.array([1, 0, 1]).reshape(1,-1), 
                       np.array([2, 2]).reshape(1,-1))
+            
+    def test_serialize(self):
+        self._test_serialize(kernel.LinearKernel())
+    
+    def test_persists(self):
+        self._test_persist(kernel.LinearKernel())
+    
+    def test_json(self):
+        self._test_json(kernel.LinearKernel(),
+                        {'class': 'LinearKernel'})
 
 
-class TestPolynomialKernel(unittest.TestCase):
+class TestPolynomialKernel(BaseTest, unittest.TestCase):
     def test_compute(self):
         with self.assertRaises(ValueError):
             kernel.PolynomialKernel(3.2)
@@ -51,10 +85,23 @@ class TestPolynomialKernel(unittest.TestCase):
         with self.assertRaises(ValueError):
             p.compute(np.array((1, 0, 2)).reshape(1,-1), 
                       np.array((-1, 2)).reshape(1,-1))
+    
+    def test_serialize(self):
+        for d in [2, 5]:
+            self._test_serialize(kernel.PolynomialKernel(d))
+    
+    def test_persists(self):
+        for d in [2, 5]:
+            self._test_persist(kernel.PolynomialKernel(d))
+    
+    def test_json(self):
+        for d in [2, 5]:
+            self._test_json(kernel.PolynomialKernel(d),
+                        {'class': 'PolynomialKernel', 'degree': d})
 
 
 
-class TestHomogeneousPolynomialKernel(unittest.TestCase):
+class TestHomogeneousPolynomialKernel(BaseTest, unittest.TestCase):
     def test_compute(self):
         with self.assertRaises(ValueError):
             kernel.HomogeneousPolynomialKernel(3.2)
@@ -82,8 +129,12 @@ class TestHomogeneousPolynomialKernel(unittest.TestCase):
             h.compute(np.array((1, 0, 2)).reshape(1,-1), 
                       np.array((-1, 2)).reshape(1,-1))
 
+    def test_serialize(self):
+        for d in [2, 5]:
+            self._test_serialize(kernel.HomogeneousPolynomialKernel(d))
 
-class TestGaussianKernel(unittest.TestCase):
+
+class TestGaussianKernel(BaseTest, unittest.TestCase):
     def test_compute(self):
         with self.assertRaises(ValueError):
             kernel.GaussianKernel(-5)
@@ -102,9 +153,13 @@ class TestGaussianKernel(unittest.TestCase):
         with self.assertRaises(ValueError):
             k.compute(np.array([-1, 3.5]).reshape(1,-1), 
                       np.array((1, 3.2, 6)).reshape(1,-1))
+            
+    def test_serialize(self):
+        for sigma in [0.1, 1]:
+            self._test_serialize(kernel.GaussianKernel(sigma))
 
 
-class TestHyperbolicKernel(unittest.TestCase):
+class TestHyperbolicKernel(BaseTest, unittest.TestCase):
     def test_compute(self):
         k = kernel.HyperbolicKernel(1, 5)
         self.assertAlmostEqual(k.compute(
@@ -122,27 +177,38 @@ class TestHyperbolicKernel(unittest.TestCase):
         with self.assertRaises(ValueError):
             k.compute(np.array([-1, 3.5]).reshape(1,-1), 
                       np.array((1, 3.2, 6)).reshape(1,-1))
+    
+    def test_serialize(self):
+        for alpha in [0.1, 1]:
+            for beta in [0.1, 1]:
+                self._test_serialize(kernel.HyperbolicKernel(alpha, beta))
 
 
-class TestPrecomputedKernel(unittest.TestCase):
+class TestPrecomputedKernel(BaseTest, unittest.TestCase):
+    def setUp(self):
+        self.kernel = kernel.PrecomputedKernel(np.array(([1, 2], [3, 4])))
+
     def test_compute(self):
         with self.assertRaises(ValueError):
-            kernel.PrecomputedKernel(np.array(((1, 2), (3, 4, 5))))
+            kernel.PrecomputedKernel(np.array(([1, 2], [3, 4, 5])))
 
-        k = kernel.PrecomputedKernel(np.array(((1, 2), (3, 4))))
-        self.assertEqual(k.compute(
+        self.assertEqual(self.kernel.compute(
                     np.array([1]).reshape(1,-1),
                     np.array([1]).reshape(1,-1)), [4.0])
-        self.assertEqual(k.compute(
+        self.assertEqual(self.kernel.compute(
                     np.array([1]).reshape(1,-1),
                     np.array([0]).reshape(1,-1)), [3.0])
 
         with self.assertRaises(IndexError):
-            k.compute(np.array([1]).reshape(1,-1), np.array([2]).reshape(1,-1))
+            self.kernel.compute(np.array([1]).reshape(1,-1),
+                               np.array([2]).reshape(1,-1))
 
         with self.assertRaises(IndexError):
-            k.compute(np.array([0]).reshape(1,-1),
-                      np.array([1.6]).reshape(1,-1))
+            self.kernel.compute(np.array([0]).reshape(1,-1),
+                                np.array([1.6]).reshape(1,-1))
+            
+    def test_serialize(self):
+        self._test_serialize(self.kernel)
 
 
 if __name__ == '__main__':
