@@ -178,12 +178,17 @@ class CrispFuzzifier(Fuzzifier):
                 result[r > threshold] = 0
                 return result
 
-            [t_opt], _ = curve_fit(r2_to_mu, squared_R, mu, 
-                                   bounds=((0,), (np.inf,)))
-            self.threshold_ = t_opt
-            
-            if self.threshold_ < 0:
-                logger.warning("Profile fit returned a negative parameter")
+            try:
+                [t_opt], _ = curve_fit(r2_to_mu, squared_R, mu, 
+                                    bounds=((0,), (np.inf,)))
+                self.threshold_ = t_opt
+                
+                if self.threshold_ < 0:
+                    logger.warning("Profile fit returned a negative parameter")
+            except RuntimeError:
+                # interpolation could not take place, fall back to fixed profile
+                self.profile = 'fixed'
+                self.fit(squared_R, mu, squared_radius)
             
         else:
             raise ValueError("'profile' parameter should either be equal to "
@@ -279,11 +284,16 @@ class LinearFuzzifier(Fuzzifier):
                                 0, 1)
                         for r_2 in R_2]
 
-            [r_2_05_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
-                                        p0=(r_2_05_guess,),
-                                        bounds=((0,), (np.inf,)))
-            self.slope_ = -1 / (2 * r_2_05_opt)
-            self.intercept_ = 1
+            try:
+                [r_2_05_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                            p0=(r_2_05_guess,),
+                                            bounds=((0,), (np.inf,)))
+                self.slope_ = -1 / (2 * r_2_05_opt)
+                self.intercept_ = 1
+            except RuntimeError:
+                # interpolation could not take place, fall back to fixed profile
+                self.profile = 'fixed'
+                self.fit(squared_R, mu, squared_radius)
 
         elif self.profile == 'infer':
 
@@ -291,13 +301,19 @@ class LinearFuzzifier(Fuzzifier):
                 return [np.clip(1 - (r_2 - r_2_1) / (r_2_0 - r_2_1), 0, 1)
                         for r_2 in R_2]
 
-            p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                 p0=(r_2_1_guess, r_2_0_guess), 
-                                 bounds=((-np.inf, -np.inf),
-                                         (np.inf, np.inf,)))
-            r_2_1_opt, r_2_0_opt = p_opt
-            self.slope_ = -1 / (r_2_0_opt - r_2_1_opt)
-            self.intercept_ = 1 + r_2_1_opt / (r_2_0_opt - r_2_1_opt)
+            try:
+                p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
+                                    p0=(r_2_1_guess, r_2_0_guess), 
+                                    bounds=((-np.inf, -np.inf),
+                                            (np.inf, np.inf,)))
+                r_2_1_opt, r_2_0_opt = p_opt
+                self.slope_ = -1 / (r_2_0_opt - r_2_1_opt)
+                self.intercept_ = 1 + r_2_1_opt / (r_2_0_opt - r_2_1_opt)
+            except RuntimeError:
+                # interpolation could not take place, fall back to fixed profile
+                self.profile = 'fixed'
+                self.fit(squared_R, mu, squared_radius)
+
         else:
             raise ValueError("'profile' parameter should be equal to "
                         "'fixed' or 'infer' (provided value: {self.profile})")
@@ -403,13 +419,18 @@ class ExponentialFuzzifier(Fuzzifier):
                 return [np.clip(_safe_exp(-(r_2 - r_2_1) / s), 0, 1)
                         for r_2 in R_2]
 
-            p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
-                                 p0=(r_2_1_guess, s_guess),
-                                 # bounds=((0, 0), (np.inf, np.inf)),
-                                 maxfev=2000)
-            r_2_1_opt, s_opt = p_opt
-            self.slope_ = -1 / s_opt
-            self.intercept_ = r_2_1_opt / s_opt
+            try:
+                p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
+                                    p0=(r_2_1_guess, s_guess),
+                                    # bounds=((0, 0), (np.inf, np.inf)),
+                                    maxfev=2000)
+                r_2_1_opt, s_opt = p_opt
+                self.slope_ = -1 / s_opt
+                self.intercept_ = r_2_1_opt / s_opt
+            except RuntimeError:
+                # interpolation could not take place, fall back to fixed profile
+                self.profile = 'fixed'
+                self.fit(squared_R, mu, squared_radius)
 
         elif isinstance(self.profile, (int, float)):
             alpha = self.profile
@@ -423,13 +444,18 @@ class ExponentialFuzzifier(Fuzzifier):
                     # all points have within the sphere -> unit membership
                     return [1] * len(R_2)
 
-            [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
-                                       p0=(r_2_1_guess,),
-                                       bounds=((0,), (np.inf,)))
-            inner = [r_2 - r_2_1_opt for r_2 in squared_R if r_2 > r_2_1_opt]
-            q = np.percentile(inner, 100 * alpha)
-            self.slope_ = np.log(alpha) / q
-            self.intercept_ = -r_2_1_opt * np.log(alpha) / q
+            try:
+                [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
+                                        p0=(r_2_1_guess,),
+                                        bounds=((0,), (np.inf,)))
+                inner = [r_2 - r_2_1_opt for r_2 in squared_R if r_2 > r_2_1_opt]
+                q = np.percentile(inner, 100 * alpha)
+                self.slope_ = np.log(alpha) / q
+                self.intercept_ = -r_2_1_opt * np.log(alpha) / q
+            except RuntimeError:
+                # interpolation could not take place, fall back to fixed profile
+                self.profile = 'fixed'
+                self.fit(squared_R, mu, squared_radius)
             
         else:
             raise ValueError("'self.profile' attribute should be equal to "
