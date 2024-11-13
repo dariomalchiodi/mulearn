@@ -22,6 +22,13 @@ def _safe_exp(r):
         except FloatingPointError:
             return 1
 
+def exp_clip(a):
+    return np.exp(a) if a < 0 else 1
+    # idx = (a < 0)
+    # a[idx] = 1
+    # a[~idx] = np.exp(a[~idx])
+    # return a
+
 
 class Fuzzifier:
     """Base class for fuzzifiers.
@@ -402,9 +409,9 @@ class ExponentialFuzzifier(Fuzzifier):
 
         if self.profile == "fixed":
             def r2_to_mu(R_2, r_2_1):
-                return [np.clip(_safe_exp( \
-                    -np.log(2) * (r_2 - r_2_1) / (squared_radius - r_2_1)),
-                    0, 1) for r_2 in R_2]
+                return [exp_clip(-np.log(2) * \
+                                 (r_2 - r_2_1) / (squared_radius - r_2_1))
+                        for r_2 in R_2]
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 [r_2_1_opt], _ = curve_fit(r2_to_mu, squared_R, mu,
@@ -416,8 +423,7 @@ class ExponentialFuzzifier(Fuzzifier):
 
         elif self.profile == "infer":
             def r2_to_mu(R_2, r_2_1, s):
-                return [np.clip(_safe_exp(-(r_2 - r_2_1) / s), 0, 1)
-                        for r_2 in R_2]
+                return [exp_clip(-(r_2 - r_2_1) / s) for r_2 in R_2]
 
             try:
                 p_opt, _ = curve_fit(r2_to_mu, squared_R, mu,
@@ -438,8 +444,8 @@ class ExponentialFuzzifier(Fuzzifier):
                 inner = [r_2 - r_2_1 for r_2 in squared_R if r_2 > r_2_1]
                 if len(inner) > 0:
                     q = np.percentile(inner, 100 * alpha)
-                    return [np.clip(_safe_exp(np.log(alpha) / q * (r_2 - r_2_1)),
-                                    0, 1) for r_2 in R_2]
+                    return [exp_clip(np.log(alpha) / q * (r_2 - r_2_1))
+                            for r_2 in R_2]
                 else:
                     # all points have within the sphere -> unit membership
                     return [1] * len(R_2)
