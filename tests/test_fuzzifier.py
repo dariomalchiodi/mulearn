@@ -14,7 +14,7 @@ class BaseTest:
     def setUp(self):
         d = load_iris()
         X = d['data']
-        self.X = 4 - X[:, 1] # otherwise membership would increase with distance
+        self.X = X[:, 2]
         self.y = np.array([1] * 50 + [0] * 100)
     
     def _test_compute(self, fuzzifier, squared_R, mu, squared_radius, target):
@@ -111,8 +111,9 @@ class TestLinearFuzzifier(BaseTest, unittest.TestCase):
                            squared_R, mu, 2, target)
 
     def test_profile(self):
-        slopes = (-0.14285714285714302, -1.1665378077030684)
-        intercepts = (1.0000000000000007, 1.380763878264059)
+        slopes = (-0.7926829266641029, -0.9984776805603038)
+        intercepts = (3.27439024332436, 2.9373025049777697)
+        
         for profile, slope, intercept in zip(['fixed', 'infer'],
                                 slopes, intercepts):
 
@@ -137,51 +138,50 @@ class TestLinearFuzzifier(BaseTest, unittest.TestCase):
 class TestExponentialFuzzifier(BaseTest, unittest.TestCase):
 
     def test_compute(self):
-        squared_R = np.array([1, 3, 6, 12, 34, 416])
-        mu = np.array([1, .9, .5, .3, .2, .1])
-        target = np.array([1.00000000e+00, 7.79143601e-01, 4.00540331e-01,
-                           1.05853139e-01, 8.04602165e-04, 1.28797649e-40])
+        squared_R = np.array([1, 3, 6, 12, 34, 37])
+        mu = np.array([1, .9, .8, .7, .2, .1])
+        target = np.array([0.84089642, 0.59460356, 0.35355339, 0.125     , 0.00276214,
+       0.00164238])
         self._test_compute(fuzz.ExponentialFuzzifier(profile='fixed'),
-                           squared_R, mu, 5, target)
-        target = np.array([1.00000000e+00, 8.49986669e-01, 5.87419583e-01,
-                           2.80556951e-01, 1.86761467e-02, 6.90097154e-23])
+                           squared_R, mu, 4, target)
+        target = np.array([1.        , 0.93790848, 0.80971391,
+                           0.60349527, 0.20539768, 0.17732365])
         self._test_compute(fuzz.ExponentialFuzzifier(profile='infer'),
-                           squared_R, mu, 5, target)
+                           squared_R, mu, 4, target)
 
         target = [
-            np.array([1.00000000e+000, 1.00000000e+000, 4.96678058e-001,
-                      2.37588306e-003, 7.38315600e-012, 1.39850564e-159]),
-            np.array([1.00000000e+00, 1.00000000e+00, 4.81156517e-01,
-                      1.11393302e-01, 5.21145506e-04, 1.82566559e-44]),
-            np.array([1.00000000e+00, 8.87724624e-01, 4.09013407e-01,
-                      8.68272604e-02, 2.95590722e-04, 4.14800012e-47]),
-            np.array([1.00000000e+00, 8.42106726e-01, 6.00356674e-01,
-                      3.05136216e-01, 2.55154525e-02, 4.94512909e-21]),
-            np.array([9.91487538e-01, 8.35522108e-01, 6.46344377e-01,
-                      3.86790709e-01, 5.88645164e-02, 3.74071500e-16]),
-            np.array([9.58324529e-01, 8.80111737e-01, 7.74596670e-01,
-                      6.00000000e-01, 2.35195248e-01, 2.03818374e-08]),
-            np.array([0.98461202, 0.95454278, 0.91115192,
-                      0.83019782, 0.59022078, 0.00157868]),
+            np.array([1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+                      6.99944998e-01, 4.16624055e-05, 1.10551439e-05]),
+            np.array([1.00000000e+00, 1.00000000e+00, 7.54962443e-01,
+                      8.24960386e-02, 2.46014950e-05, 8.13233710e-06]),
+            np.array([1.00000000e+00, 8.81800354e-01, 4.08231664e-01,
+                      8.74942523e-02, 3.08493908e-04, 1.42818021e-04]),
+            np.array([1., 0.89834481, 0.62190419,
+                      0.29804671, 0.02009127, 0.01390874]),
+            np.array([1., 0.90433429, 0.74223711,
+                      0.5, 0.11745466, 0.09640153]),
+            np.array([1., 0.97403053, 0.89765262,
+                      0.76239452, 0.41889818, 0.38605058]),
+            np.array([1., 0.96809506, 0.92213607,
+                      0.83666002, 0.58566202, 0.55785852]),
             np.array([0.99345844, 0.98050343, 0.96138697,
-                      0.92426491, 0.8, 0.06520449]),
-            np.array([0.99953184, 0.99859618, 0.99719433,
-                      0.99439653, 0.98420493, 0.82299933])
+                      0.92426491, 0.8       , 0.78440274]),
+            np.array([0.9970365 , 0.99113582, 0.9823502 ,
+                      0.96501192, 0.9040156 , 0.89600224])
         ]
 
         for alpha, t in zip(np.linspace(0.1, 0.9, 9), target):
             self._test_compute(fuzz.ExponentialFuzzifier(profile=alpha),
-                               squared_R, mu, 5, t)
+                               squared_R, mu, 4, t)
 
     def test_profile(self):
 
-        slopes = (-0.19804205158856666, -3.3844465544605287,
-                  -46.051701859880865, -1.7001724434999912)
-        intercepts = (3.7978835933515624e-14, 1.7098945314973162,
-                      27.631021115928526, 0.7838817116258364)
+        slopes = (-98.52763209367015,-14.305178809577578,
+                  -1.142022483767279, -0.32724662996583)
+        intercepts = (344.1535651472856, 27.17983975471548,
+                      2.1513025936983423, 0.5563191029720798)
         
-
-        for profile, slope, intercept in zip(['fixed', 'infer', 0.01, 0.4],
+        for profile, slope, intercept in zip(['fixed', 'infer', 0.1, 0.4],
                                 slopes, intercepts):
 
             self._test_profile(fuzz.ExponentialFuzzifier(profile=profile),

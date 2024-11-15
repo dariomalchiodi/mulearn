@@ -23,11 +23,7 @@ def _safe_exp(r):
             return 1
 
 def exp_clip(a):
-    return np.exp(a) if a < 0 else 1
-    # idx = (a < 0)
-    # a[idx] = 1
-    # a[~idx] = np.exp(a[~idx])
-    # return a
+    return np.where(a > 0, 1, np.exp(a))
 
 
 class Fuzzifier:
@@ -477,7 +473,7 @@ class ExponentialFuzzifier(Fuzzifier):
     
     def get_membership(self, R_2):
         check_is_fitted(self, ['slope_', 'intercept_'])
-        return np.clip(np.exp(self.slope_ * R_2 + self.intercept_), 0, 1)
+        return exp_clip(self.slope_ * R_2 + self.intercept_)
 
 
 class QuantileConstantPiecewiseFuzzifier(Fuzzifier):
