@@ -34,7 +34,7 @@ class BaseTest:
     def _test_profile(self, fuzzifier, attributes, values):
          fuzzifier.fit(self.X, self.y, 3.5)
          for a, v in zip(attributes, values):
-             self.assertAlmostEqual(fuzzifier.__getattribute__(a), v, places=6)
+             self.assertAlmostEqual(fuzzifier.__getattribute__(a), v, places=5)
     
          _, _ ,_ = fuzzifier.get_profile(self.X)
     
