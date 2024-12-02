@@ -187,7 +187,8 @@ class CrispFuzzifier(Fuzzifier):
                 self.threshold_ = t_opt
                 
                 if self.threshold_ < 0:
-                    logger.warning("Profile fit returned a negative parameter")
+                    logger.warning("Profile fit returned a negative parameter "
+                                   f"({self.threshold_})")
             except RuntimeError:
                 # interpolation could not take place, fall back to fixed profile
                 self.profile = 'fixed'
@@ -321,9 +322,11 @@ class LinearFuzzifier(Fuzzifier):
             raise ValueError("'profile' parameter should be equal to "
                         "'fixed' or 'infer' (provided value: {self.profile})")
         if self.slope_ > 0:
-            logging.warning('Profile fitting returned a positive slope')
+            logging.warning('Profile fitting returned a positive slope '
+                            f'({self.slope_})')
         if self.intercept_ < 0:
-            logging.warning('Profile fitting returned a negative intercept')
+            logging.warning('Profile fitting returned a negative intercept '
+                            f'({self.intercept_})')
         
         return self
 
@@ -465,9 +468,11 @@ class ExponentialFuzzifier(Fuzzifier):
                              f"(provided value: {self.profile})")
         
         if self.slope_ > 0:
-            logging.warning('Profile fitting returned a positive slope')
+            logging.warning('Profile fitting returned a positive slope '
+                            f'({self.slope_})')
         if self.intercept_ < 0:
-            logging.warning('Profile fitting returned a negative intercept')
+            logging.warning('Profile fitting returned a negative intercept '
+                            f'({self.intercept_})')
         
         return self
     
