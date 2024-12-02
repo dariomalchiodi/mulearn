@@ -322,10 +322,10 @@ class LinearFuzzifier(Fuzzifier):
             raise ValueError("'profile' parameter should be equal to "
                         "'fixed' or 'infer' (provided value: {self.profile})")
         if self.slope_ > 0:
-            logging.warning('Profile fitting returned a positive slope '
+            logger.warning('Profile fitting returned a positive slope '
                             f'({self.slope_})')
         if self.intercept_ < 0:
-            logging.warning('Profile fitting returned a negative intercept '
+            logger.warning('Profile fitting returned a negative intercept '
                             f'({self.intercept_})')
         
         return self
@@ -468,10 +468,10 @@ class ExponentialFuzzifier(Fuzzifier):
                              f"(provided value: {self.profile})")
         
         if self.slope_ > 0:
-            logging.warning('Profile fitting returned a positive slope '
+            logger.warning('Profile fitting returned a positive slope '
                             f'({self.slope_})')
         if self.intercept_ < 0:
-            logging.warning('Profile fitting returned a negative intercept '
+            logger.warning('Profile fitting returned a negative intercept '
                             f'({self.intercept_})')
         
         return self
