@@ -17,6 +17,29 @@ logger = logging.getLogger(__name__)
 
 
 class SupportVectorMachine(BaseEstimator):
+    """Implements a Support Vector Machine model.
+
+    :param c: Trade-off constant, defaults to 1.
+    :type c: float
+    :param k: Kernel function, defaults to "gaussian".
+    :type k: Literal["auto", "ball_tree", "kd_tree", "brute"]
+    :param k_params: Parameters for the kernel function, defaults to None.
+    :type k_params: dict[str, Any] | None
+    :param solver: The solver to use for the optimization problem, defaults to "gurobi".
+    :type solver: Literal["gurobi", "tensorflow"]
+    :param solver_params: Parameters for the solver, defaults to None.
+    :type solver_params: dict[str, Any] | None
+
+    :param n_features_in_: Number of features of the data passed to fit().
+    :type n_featues_in_: int
+    :param chis_: Coefficients learnt from the fitting.
+    :type chis_: list[float]
+    :param fixed_term_: Fixed term of the equation.
+    :type fixed_term_: NDArray[float]
+    :param squared_radius_:
+    :type squared_radius_: float
+    """
+
     def __init__(self,
                  c: float = 1,
                  k: Literal["linear", "polynomial", "homogeneous", "gaussian", "hyperbolic", "precomputed"] = "gaussian",

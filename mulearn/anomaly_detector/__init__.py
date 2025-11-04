@@ -11,8 +11,8 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-from mulearn.anomaly_detectors.isolation_forest import SupervisedIsolationForest
-from mulearn.anomaly_detectors.support_vector_machine import SupportVectorMachine
+from mulearn.anomaly_detector.isolation_forest import SupervisedIsolationForest
+from mulearn.anomaly_detector.support_vector_machine import SupportVectorMachine
 
 
 logger = logging.getLogger(__name__)

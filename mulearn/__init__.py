@@ -13,8 +13,8 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.utils.validation import check_X_y, check_array
 
 import mulearn.fuzzifier as fuzzifier
-from mulearn import anomaly_detectors
-from mulearn.anomaly_detectors import AnomalyDetector
+from mulearn import anomaly_detector
+from mulearn.anomaly_detector import AnomalyDetector
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class FuzzyInductor(RegressorMixin, BaseEstimator):
 
     def __init__(self,
                  fuzzifier: fuzzifier.Fuzzifier = fuzzifier.ExponentialFuzzifier(),
-                 anomaly_detector: AnomalyDetector = anomaly_detectors.SVMAnomalyDetector(),
+                 anomaly_detector: AnomalyDetector = anomaly_detector.SVMAnomalyDetector(),
                  keep_original_data: bool = False
                  ) -> None :
         r"""Create an instance of :class:`FuzzyInductor`.
