@@ -1,3 +1,6 @@
+"""This module implements an isolation forest, from the tree node, to the forest
+"""
+
 import warnings
 from typing import Any, Callable, Literal, Self
 from numpy.typing import NDArray, ArrayLike
@@ -10,9 +13,23 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 DEFAULT_MAX_SAMPLES = 256           # default number of samples for each tree, taken from sklearn's IsolationForest max_samples
 DEFAULT_OFFSET = - 0.5              # used in decision_function, related to contamination value, used when contamination = auto
-MEMBERSHIP_ANOMALY_THRESHOLD = 0.5   # used for decision_function value computation. A memberhsip value less or equal than this, is considered anomaly
+LABEL_ANOMALY_THRESHOLD = 0.5   # used for decision_function value computation. A memberhsip value less or equal than this, is considered anomaly
 
 class TreeNode:
+    """ The node of a tree of the isolation forest
+
+    :param left: The left child if any, defaults to None
+    :type left: Self | None, optional
+    :param right: The right child if any, defaults to None
+    :type right: Self | None, optional
+    :param value: The stored object or value for this node, defaults to None
+    :type value: Any, optional
+    :param feature_index: Index of the stored feature value, defaults to None
+    :type feature_index: int | None, optional
+    :param depth: Depth of this node, the root has 0 depth, defaults to None
+    :type depth: int | None, optional
+    """
+
     def __init__(self,
                  left: Self | None = None,
                  right: Self | None = None,
@@ -30,21 +47,50 @@ class TreeNode:
         return f"TreeNode(feature_index: {self.feature_index}, value: {self.value}, depth: {self.depth})"
 
     def get_value(self) -> Any:
+        """Get the stored object or value
+
+        :return: the stored object or value
+        :rtype: Any
+        """
+
         return self.value
 
     def get_feat_idx(self) -> int | None:
+        """Get the index of the stored feature value
+
+        :return: Index of the feature
+        :rtype: int | None
+        """
+
         return self.feature_index
 
     def get_depth(self) -> int:
+        """Get the depth of this node
+
+        :return: The depth
+        :rtype: int
+        """
+
         return self.depth or 0
 
     def get_child(self, side: Literal["left", "right"]) -> Self | None:
+        """Get the left or right child if there is, `None` otherwise
+
+        :param side: Which of the two children
+        :type side: Literal[&quot;left&quot;, &quot;right&quot;]
+        :return: The child of class :class:`TreeNote`
+        :rtype: Self | None
+        """
+
         if side == "left":
             return self.left
         else:
             return self.right
 
     def print_subTree(self, side: str = "", depth: int = 0) -> None:
+        """Print a string representation of the sub tree from this node under
+        """
+
         print(f"Depth {depth}:", "   " * depth, side, str(self.get_feat_idx()), str(self.get_value()))
         if self.left is not None:
             self.left.print_subTree("l", depth + 1)
@@ -52,6 +98,26 @@ class TreeNode:
             self.right.print_subTree("r", depth + 1)
 
 class IsolationTree:
+    """Class of an Isolation Tree
+
+    :param max_depth: The max depth that the tree can reach, defaults to 20
+    :type max_depth: int, optional
+    :param random_state: A random state variable for reproducible results, defaults to None
+    :type random_state: int | None, optional
+
+    :param og_features_indices_: The feature indices of a sample from the
+    original dataset
+    :type og_features_indices_: ArrayLike
+    :param depth_: The depth of the tree
+    :type depth_: int
+    :param num_nodes_: The number of nodes in the tree
+    :type num_nodes_: int
+    :param random_number_generator_: A random number generator useful for the sampling of features and data
+    :type random_number_generator_: :class:`np.random.Generator`
+    :param root_: The root node
+    :type root_: :class:`TreeNode`
+    """
+
     def __init__(self,
                  max_depth: int = 20,
                  random_state: int | None = None
@@ -65,6 +131,7 @@ class IsolationTree:
         :return: True if fitted, False otherwise.
         :rtype: bool
         """
+
         if getattr(self, "num_nodes_", 0) == 1:
             warnings.warn("Tree has only the root node, try feeding more data", UserWarning)
         return (
@@ -81,6 +148,7 @@ class IsolationTree:
         :return: The original feature index for the given sampled index
         :rtype: int
         """
+
         if not hasattr(self, "og_features_indices_") or self.og_features_indices_ is None:
             raise RuntimeError("Original feature index not set yet")
         return self.og_features_indices_[sampled_feature_index]
@@ -90,7 +158,7 @@ class IsolationTree:
 
         :param X: The array of values in feature space
         :type X: NDArray
-        :param y: The array of membership values, in interval [0,1]
+        :param y: The array of labels values, in interval [0,1]
         :type y: NDArray
         :param verbose: To print more informations, either 0, 1 or 2, defaults         if verbose>=2:
             print("normalized areas values:", normalized_areas)to 0
@@ -98,6 +166,7 @@ class IsolationTree:
         :return: The inverse callable function, that accepts the y as paramter, and returns the corresponding feature value. And also a boolean, if True then the cumulative function is constant, and the inverse function will always return the maximum feature value.
         :rtype: tuple[Callable[[NDArray[np.float64 | np.int_] | float | int], NDArray[np.float64]], bool]
         """
+
         # Avoiding duplicates in couples (X,y):
         zipped_X_y = list(zip(X, y))
         zipped_X_y = np.unique(zipped_X_y, axis=0)
@@ -166,6 +235,7 @@ class IsolationTree:
         :return: A TreeNode
         :rtype: TreeNode | None
         """
+
         # Increase tree depth and nodes number
         if verbose == 2:
             print("Indices interval start-end:",start,end)
@@ -229,7 +299,7 @@ class IsolationTree:
 
         :param X: Array of elements to fit in the tree
         :type X: ArrayLike
-        :param y: Array of membership values, of same size of X
+        :param y: Array of labels values, of same size of X
         :type y: ArrayLike
         :param og_features_indices: Array of the sampled feature indices relative to the original/full array. If not set, then is assumed to use all of the features, defaults to None
         :type og_features_indices: NDArray[np.int_]
@@ -238,6 +308,7 @@ class IsolationTree:
         :return: The fitted IsolationTree
         :rtype: Self
         """
+
         self._X = X.copy()
         self._y = y.copy()
         if og_features_indices is None:
@@ -261,6 +332,7 @@ class IsolationTree:
         :return: The depth of the found `target_data` value
         :rtype: int
         """
+
         target_data = np.asarray(target_data)
         if target_data.ndim > 1:
             raise TypeError(f"target_data must have dimension=1, but it has dimension={target_data.ndim}")
@@ -283,6 +355,7 @@ class IsolationTree:
         :return: The max depth
         :rtype: int
         """
+
         return self.depth_
 
     def get_num_nodes(self) -> int:
@@ -291,17 +364,49 @@ class IsolationTree:
         :return: Number of nodes
         :rtype: int
         """
+
         return self.num_nodes_
 
     def print_tree(self) -> None:
         """Prints the tree to stdout
         """
+
         if self.root_ is None:
             print("Empty tree")
             return
         self.root_.print_subTree()
 
 class SupervisedIsolationForest(BaseEstimator):
+    """Class implementing a supervised isolation forest
+
+    :param n_estimators: The number of trees in the forest, defaults to 20
+    :type n_estimators: int, optional
+    :param max_samples: Max samples to use per tree, defaults to "auto"
+    :type max_samples: Literal[&quot;auto&quot;] | int | float, optional
+    :param contamination: Ratio of anomalies in the given dataset, defaults to "auto"
+    :type contamination: Literal[&quot;auto&quot;] | float, optional
+    :param max_features: Max number of features to use per tree, defaults to 1.0
+    :type max_features: int | float, optional
+    :param max_depth: Max depth reachable from a tree, defaults to None
+    :type max_depth: int | None, optional
+    :param random_state: A random state to get reproducible results, defaults to None
+    :type random_state: int | None, optional
+
+    :param n_features_in_: The number of features for each sample of the given points
+    :type n_features_in_: int
+    :param random_number_generator_: A random number generator useful for the sampling of features and data
+    :type random_number_generator_: :class:`np.random.Generator`
+    :param anomalies_number_: A value useful to calculate the offset value that
+     establishes the decision boundary for anomalies
+    :type anomalies_number_: int
+    :param forest_: The list of isolation trees
+    :type forest_: List[IsolationTree]
+    :param c_of_n_: A term to calculate the anomaly score, from the original paper, `c(n)`
+    :type c_of_n_: float
+    :param offset_: The offset value subtracted to the score_samples to decide whether the point is anomalous or normal
+    :type offset_: float
+    """
+
     def __init__(self,
                  n_estimators: int = 20,
                  max_samples: Literal["auto"] | int | float = "auto",
@@ -336,7 +441,7 @@ class SupervisedIsolationForest(BaseEstimator):
 
         :param X: The array of data to fit
         :type X: ArrayLike
-        :param y: The array of membership values, in interval [0,1] with same length of X
+        :param y: The array of labels values, in interval [0,1] with same length of X
         :type y: ArrayLike
         :param verbose: If to print more informations, can be 0 or 1, defaults to 0
         :type verbose: int, optional
@@ -383,8 +488,8 @@ class SupervisedIsolationForest(BaseEstimator):
                 raise ValueError(f"if contamination is a string, it should be: \"auto\". Given value: {self.contamination}")
             # Default behaviour of sklearn IsolationForest:
             # self.offset_ = DEFAULT_OFFSET     # DEFAULT_OFFSET = - 0.5
-            # A different, custom, implementation to infer the contamination value, using membership informations:
-            self.anomalies_number_ = np.sum(self._y <= MEMBERSHIP_ANOMALY_THRESHOLD)        # MEMBERSHIP... = 0.5
+            # A different, custom, implementation to infer the contamination value, using labels informations:
+            self.anomalies_number_ = np.sum(self._y <= LABEL_ANOMALY_THRESHOLD)        # LABEL... = 0.5
         else:
             raise TypeError(f"contamination parameter should be either a 'float' or the string value: \"auto\", given: {type(self.contamination)}")
 
@@ -469,6 +574,7 @@ class SupervisedIsolationForest(BaseEstimator):
         :return: The array of scores with values in interval [0,1]
         :rtype: NDArray[np.float64]
         """
+
         check_is_fitted(self)
         X = check_array(X)
 
@@ -496,6 +602,7 @@ class SupervisedIsolationForest(BaseEstimator):
         :return: The array of scores with values in interval [0,1]
         :rtype: NDArray[np.float64]
         """
+
         check_is_fitted(self)
         X = check_array(X)
         # As stated in sklearn 'score_samples is the opposite of the anomaly score':
@@ -509,6 +616,7 @@ class SupervisedIsolationForest(BaseEstimator):
         :return: Array of floats, same length of X, in interval [-1,1]. Dimension 1
         :rtype: NDArray[np.float64]
         """
+
         check_is_fitted(self)
         X = check_array(X)
         return self.score_samples(X) - self.offset_
@@ -519,11 +627,25 @@ class SupervisedIsolationForest(BaseEstimator):
         Instead of the normal sklearn behaviour of -1,+1.
         Since we are getting label values in fit [0,1]
         """
+
         check_is_fitted(self)
         X = check_array(X)
         return np.where(self.decision_function(X) > 0, 1, 0)
 
     def score(self, X: ArrayLike, y: ArrayLike) -> float:
+        """Compute the score of the predictions.
+
+        Score is obtained as the opposite of MSE between predicted
+        values and labels.
+
+        :param X: Vectors in data space
+        :type X: ArrayLike
+        :param y: Labels containing the *gold standard* values for the vectors in `X`
+        :type y: ArrayLike
+        :returns: Opposite of MSE between the predictions for the elements in `X` w.r.t. the labels in `y`.
+        :rtype: float
+        """
+
         check_is_fitted(self)
         X, y = check_X_y(X, y)
         return 1.0 - np.mean((self.predict(X) - y) ** 2)

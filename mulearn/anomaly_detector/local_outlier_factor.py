@@ -1,3 +1,6 @@
+""" This module implements a Local Outlier Factor model for anomaly detection
+"""
+
 from typing import Any, Callable, Literal, Self
 from numpy.typing import NDArray, ArrayLike
 
@@ -7,6 +10,9 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
 class LocalOutlierFactor:
+    """ The class implementing the Local Outlier Factor
+    """
+
     def __init__(self) -> None:
         raise NotImplementedError("Not implemented")
 

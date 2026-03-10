@@ -24,23 +24,21 @@ warnings.filterwarnings("ignore", category=FitFailedWarning)
 
 
 class FuzzyInductor(RegressorMixin, BaseEstimator):
-    """Base class for FuzzyInductor."""
+    """ Base class for FuzzyInductor
+
+    :param fuzzifier: fuzzifier mapping distance values to membership degrees, defaults to `ExponentialFuzzifier()`.
+    :type fuzzifier: :class:`mulearn.fuzzifier.Fuzzifier`
+    :param anomaly_detector: the anomaly detector implementation to use, defaults to `SVMAnomalyDetector()`.
+    :type anomaly_detector: :class:mulearn.anomaly_detectors.AnomalyDetector`
+    :param save_data: specifies if we want the model to save the original data to visualize the profile of the membership later, defaults to `False`.
+    :type save_data: `bool`
+    """
 
     def __init__(self,
                  fuzzifier: fuzzifier.Fuzzifier = fuzzifier.ExponentialFuzzifier(),
                  anomaly_detector: AnomalyDetector = anomaly_detector.SVMAnomalyDetector(),
                  keep_original_data: bool = False
                  ) -> None :
-        r"""Create an instance of :class:`FuzzyInductor`.
-
-        :param fuzzifier: fuzzifier mapping distance values to membership degrees, defaults to `ExponentialFuzzifier()`.
-        :type fuzzifier: :class:`mulearn.fuzzifier.Fuzzifier`
-        :param anomaly_detector: the anomaly detector implementation to use, defaults to `SVMAnomalyDetector()`.
-        :type anomaly_detector: :class:mulearn.anomaly_detectors.AnomalyDetector`
-        :param save_data: specifies if we want the model to save the original data to visualize the profile of the membership later, defaults to `False`.
-        :type save_data: `bool`
-        """
-
         self.fuzzifier = fuzzifier
         self.anomaly_detector = anomaly_detector
         self.keep_original_data = keep_original_data

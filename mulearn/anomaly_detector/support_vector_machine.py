@@ -1,3 +1,6 @@
+"""This module implements a Support Vector Machine for anomaly detection
+"""
+
 import logging
 
 from typing import Any, Literal, Self
@@ -75,27 +78,29 @@ class SupportVectorMachine(BaseEstimator):
         :return: If the `chis_` are set or not
         :rtype: bool
         """
+
         return (
             getattr(self, "chis_", None) is not None
         )
 
     def fit(self, X: ArrayLike, y: ArrayLike | None = None, warm_start: bool = False) -> Self:
-        """Induce the membership function starting from a labeled sample.
+        """Fits the support vector machine to the given data points `X`
 
-        :param X: vectors in data space
+        :param X: Vectors in data space
         :type X: ArrayLike
-        :param y: membership for the vectors in `X`, defaults to None for the unsupervised version
+        :param y: Labels for the vectors in `X`, defaults to None for the unsupervised version
         :type y: ArrayLike | None, optional
-        :param warm_start: flag triggering the non reinitialization of
+        :param warm_start: Flag triggering the non reinitialization of
           independent variables of the optimization problem, defaults to False
         :type warm_start: bool, optional
-        :raises ValueError: if the values in `y` are not between 0 and 1, if
+        :raises ValueError: If the values in `y` are not between 0 and 1, if
           `X` and have different lengths, or if `X` contains elements of
           different lengths.
-        :raises NotFittedError: if we set warm_start = True but the model hasn't been fit
-        :return: the trained model
+        :raises NotFittedError: If we set warm_start = True but the model hasn't been fit
+        :return: The trained model
         :rtype: Self
         """
+
         X = check_array(X)
 
         if y is None:
@@ -133,7 +138,7 @@ class SupportVectorMachine(BaseEstimator):
         if warm_start:
             check_is_fitted(self)
             if self.chis_ is None:
-                raise NotFittedError("chis variable are set to None")
+                raise NotFittedError("chis variable is set to None")
             self._solver.initial_values = self.chis_
 
         if type(self._kernel) is kernel.PrecomputedKernel:
@@ -179,6 +184,7 @@ class SupportVectorMachine(BaseEstimator):
         :return: array with the squared distances of the data points
         :rtype: NDArray[np.float64]
         """
+
         check_is_fitted(self)
         X = check_array(X)
         t1 = self._kernel.compute(X, X)
@@ -200,6 +206,7 @@ class SupportVectorMachine(BaseEstimator):
         :return: array of values: more negative for more anomalous, more positive for more normal points
         :rtype: NDArray[np.float64]
         """
+
         check_is_fitted(self)
         X = check_array(X)
         return self.squared_radius_ - self.anomaly_score(X)
@@ -220,18 +227,19 @@ class SupportVectorMachine(BaseEstimator):
 
     def score(self, X: ArrayLike, y: ArrayLike) -> float:
         """Compute the score obtained as the inverted MSE between predicted
-        membership values and labels.
+        values and labels.
 
         1.0 for best score, and 0.0 for worst score.
 
         :param X: Vectors in data space.
         :type X: iterable of `float` vectors having the same length
-        :param y: Labels containing the *gold standard* membership values
+        :param y: Labels containing the *gold standard* values
           for the vectors in `X`.
         :type y: iterable of `float` having the same length of `X`
         :returns: `float` -- inverted MSE between the predictions for the
           elements in `X` w.r.t. the labels in `y`.
         """
+
         check_is_fitted(self)
         X, y = check_X_y(X, y)
         return 1.0 - np.mean((self.predict(X) - y) ** 2)
